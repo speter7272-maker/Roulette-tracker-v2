@@ -16,6 +16,7 @@
     .pill{background:var(--chip);border:1px solid var(--border);border-radius:999px;padding:8px 10px;font-size:12px;color:var(--muted)}
     .pill b{color:var(--txt)}
     .btn{appearance:none;border:1px solid var(--border);background:var(--chip);color:var(--txt);padding:10px 12px;border-radius:12px;font-weight:600;cursor:pointer}
+    .btn.small{padding:6px 10px;font-size:12px;border-radius:10px}
     .btn:active{transform:translateY(1px)}
     .btn.primary{border-color:rgba(96,165,250,.45);background:rgba(96,165,250,.18)}
     .btn.danger{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.12)}
@@ -69,7 +70,15 @@
     gap:10px; margin-bottom:10px;
   }
 
-</style>
+
+    .alert{border:1px solid rgba(220,38,38,.35);background:rgba(220,38,38,.08);padding:12px;border-radius:12px}
+    .topplays{display:grid;grid-template-columns:repeat(1,1fr);gap:8px}
+    .playcard{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);padding:10px;border-radius:12px}
+    .playhdr{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+    .pill{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);opacity:.9}
+    .small{font-size:12px;opacity:.9;line-height:1.25}
+
+  </style>
 </head>
 <body>
   <div class="wrap">
@@ -160,16 +169,32 @@ Tap spins. Tracks last 10/15/20: Junko quadrants, columns, dozens, red/black, hi
 <div class="card">
         <div style="font-weight:800;margin-bottom:8px">Trend summary</div>
         <div class="stat">
-          <div class="box"><div class="k">Recommended play</div><div class="v" id="recommend">Sit out</div><div class="k" id="reason">No data yet.</div></div>
+          <div class="box"><div class="k">Recommended play</div><div class="v" id="recommend">Sit out</div><button id="explainBtn" class="btn small" style="margin-top:8px;display:none">Explain</button><div class="k" id="reason">No data yet.</div></div>
           <div class="box"><div class="k">Table state</div><div class="v" id="state">—</div><div class="k" id="state2">—</div></div>
+        </div>
+
+        
+        <div id="alertBox" class="alert" style="display:none;margin-top:10px">
+          <div style="font-weight:800;margin-bottom:4px">Trend change alert</div>
+          <div id="alertText">—</div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="setActiveBtn">Set active to recommended</button>
+            <button class="btn" id="clearActiveBtn">Clear active</button>
+          </div>
         </div>
 
         <div class="hr"></div>
 
+        <div style="font-weight:800;margin-bottom:8px">Top strategies right now</div>
+        <div id="topPlays" class="topplays"></div>
+<div class="hr"></div>
+
         <div class="stat">
           <div class="box"><div class="k">Columns (C1/C2/C3)</div><div class="v mono" id="cols">0 / 0 / 0</div></div>
           <div class="box"><div class="k">Dozens (D1/D2/D3)</div><div class="v mono" id="doz">0 / 0 / 0</div></div>
-          <div class="box"><div class="k">Red / Black</div><div class="v mono" id="rb">0 / 0</div></div>
+          
+          <div class="box"><div class="k">Double Streets (per dozen)</div><div class="v mono" id="ds">D1 — | D2 — | D3 —</div></div>
+<div class="box"><div class="k">Red / Black</div><div class="v mono" id="rb">0 / 0</div></div>
           <div class="box"><div class="k">High / Low</div><div class="v mono" id="hl">0 / 0</div></div>
           <div class="box"><div class="k">Even / Odd</div><div class="v mono" id="eo">0 / 0</div></div>
           <div class="box"><div class="k">Junko quadrants</div><div class="v mono" id="junko">GN 0 | HO 0 | LO 0 | M 0</div></div>
@@ -263,6 +288,39 @@ Tap spins. Tracks last 10/15/20: Junko quadrants, columns, dozens, red/black, hi
     if (!(v>=1 && v<=36)) return null;
     return v<=12 ? 1 : (v<=24 ? 2 : 3);
   }
+
+  function dsKey(n){
+    if (n === "00" || n === 0) return null;
+    var v = Number(n);
+    if (!(v>=1 && v<=36)) return null;
+    var d = v<=12 ? 1 : (v<=24 ? 2 : 3);
+    var base = (d-1)*12;
+    var a = base+1, b = base+4, c = base+7;
+    // DS1: a..a+5, DS2: b..b+5, DS3: c..c+5
+    if (v>=a && v<=a+5) return {d:d, i:1};
+    if (v>=b && v<=b+5) return {d:d, i:2};
+    if (v>=c && v<=c+5) return {d:d, i:3};
+    return {d:d, i:2}; // fallback (shouldn't happen)
+  }
+  function dsCounts(vals){
+    var out = {d1:[0,0,0], d2:[0,0,0], d3:[0,0,0]};
+    vals.forEach(function(n){
+      var k = dsKey(n);
+      if(!k) return;
+      var arr = (k.d===1?out.d1:(k.d===2?out.d2:out.d3));
+      arr[k.i-1] += 1;
+    });
+    return out;
+  }
+  function dsPickByCount(vals){
+    var dc = dsCounts(vals);
+    function best(arr){
+      var mx = Math.max(arr[0],arr[1],arr[2]);
+      var idx = (arr[0]===mx?1:(arr[1]===mx?2:3));
+      return {mx:mx, idx:idx};
+    }
+    return {d1:best(dc.d1), d2:best(dc.d2), d3:best(dc.d3), dc:dc};
+  }
   function streetId(n){
     if (n === "00" || n === 0) return null;
     var v = Number(n);
@@ -303,8 +361,38 @@ Tap spins. Tracks last 10/15/20: Junko quadrants, columns, dozens, red/black, hi
   var state = $("state");
   var state2 = $("state2");
 
+
+  var topPlays = $("topPlays");
+  var alertBox = $("alertBox");
+  var alertText = $("alertText");
+  var setActiveBtn = $("setActiveBtn");
+  var clearActiveBtn = $("clearActiveBtn");
+
+  var ACTIVE_KEY = "roulette_active_strategy_v1";
+  var activeStrategy = localStorage.getItem(ACTIVE_KEY) || "";
+  var badCount = 0;
+
+  function setActive(name){
+    activeStrategy = name || "";
+    badCount = 0;
+    if(activeStrategy){
+      localStorage.setItem(ACTIVE_KEY, activeStrategy);
+    } else {
+      localStorage.removeItem(ACTIVE_KEY);
+    }
+  }
+  function escapeHtml(s){
+    s = (s==null) ? "" : String(s);
+    return s.replace(/[&<>"']/g, function(ch){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]) || ch;
+    });
+  }
+
+
+
   var cols = $("cols");
   var doz = $("doz");
+  var ds = $("ds");
   var rb = $("rb");
   var hl = $("hl");
   var eo = $("eo");
@@ -312,6 +400,144 @@ Tap spins. Tracks last 10/15/20: Junko quadrants, columns, dozens, red/black, hi
 
   var kbd = $("kbd");
   var manualInput = $("manualInput");
+  var explainBtn = $("explainBtn");
+
+    var STRATEGY_DETAILS = {
+    'DS Cash Power': 'DS Cash Power
+
+Setup
+- Observe first 15 spins.
+- For each dozen, select the hottest double-street (6-line) by hit-count in the last-15.
+
+Bets (base)
+- Corners: 6 Diamonds corner set, $5 per corner.
+- Double streets: 1 double-street per dozen, $10 each (3 total).
+
+Win/Loss definition (per your rule)
+- WIN only if ANY double-street hits.
+- Corner-only hits are treated as a LOSS for progression.
+
+Progression (global, step only after 2 losses)
+- Track “losses” as defined above.
+- After 2 consecutive losses:
+  - Corners: +$5 per corner (6D unit up)
+  - Double streets: +$10 to EACH of the 3 double streets
+- On a DS WIN:
+  - Corners: down 1 unit (min $5)
+  - Loss counter resets
+
+Reset
+- If PnL ≥ 85% of session high: reset bets to base and re-pick DS + corners (if using adaptive corners).',
+    '6 Diamonds (Corner Core)': '6 Diamonds (Corner Core)
+
+Bets
+- 6 fixed corners (your standard 6).
+
+Progression
+- Loss: increase ALL corners by +1 unit.
+- Win: decrease ALL corners by −1 unit (minimum 1 unit).
+
+Use when
+- Repeat-heavy tables (number repeats within ≤5, or street repeats within ≤3).',
+    'Holy Grail': "Holy Grail (2-dozen tracking / sit-out / reset)
+
+This tracker uses the Holy Grail rules you provided in prior sims:
+- Bet two dozens under your HG trigger logic
+- Sit-out / reset rules per your HG spec
+(If you want the exact current implementation text shown here, paste your final HG rules and I'll pin them verbatim.)",
+    'Junko Quadrants': 'Junko Quadrants
+
+Quadrants (American wheel mapping in your brief)
+- Green Neighbors: 00,0,1,2,9,10,13,14,27,28
+- High Orphans: 24,25,26,29,30,33,34,35,36
+- Low Orphans: 3,4,8,11,12,15,16,22,23
+- Middle: 5,6,7,17,18,19,20,21,31,32
+
+Selection
+- Based on last-15: choose hottest/driest depending on the mode you’re using.
+
+Progression
+- Uses your currently selected progression/reset rules (varies by version).',
+    'Fibonacci Spiral — Column-Led Follow-Winner': 'Fibonacci Spiral — Column-Led Follow-Winner
+
+Entry
+- Observe first 15 spins.
+- Identify dominant column (≥7 hits in last 15).
+
+Bets
+- 2 units on dominant column
+- 1 unit on second hottest column
+- Follow the winning column each spin.
+
+Progression
+- Modified Fibonacci ladder (per your spec), with caps/resets.',
+    'Black Chip / Black Anchor': 'Black Chip / Black Anchor
+
+Bets
+- Black anchor bet plus small structural corner coverage (per your spec).
+
+Use when
+- Black/column structure is visibly skewed.
+
+Reset
+- Reset when within your session-high threshold.',
+    'Hot Quadrant last-15 (Option A default)': 'Hot Quadrant last-15 (Option A)
+
+Trigger
+- Top Junko quadrant ≥6 hits in last 15.
+
+Bets
+- Hot 5 numbers in that quadrant (plus neighbors if repeats are present).
+
+Progression
+- +$1 after 3 consecutive losing bet-spins
+- Reset to $1 on any win.',
+    'Disappearing Streets': 'Disappearing Streets
+
+Entry
+- Flat / choppy tables (no repeat numbers or repeat streets active).
+
+Bets
+- Start with 6–8 non-overlapping streets.
+- Remove winning streets.
+- Controlled progression (Fibonacci or slow).
+- Reset when 5 streets remain and you win.',
+    'Production (A/B)': 'Production (A/B)
+
+Entry
+- Dozen or Junko quadrant concentration.
+
+Style
+- Heavy coverage with mandatory stops/resets.
+
+Note
+- This tracker labels Production when dozens/quadrants are concentrated; exact bet structure depends on which Production variant you choose.',
+    
+    '50/50 Edge Rider': '50/50 Edge Rider (Red/Black, High/Low, Even/Odd)\n\nEntry (casino mode)\n- Triggered only when the last-20 shows BOTH:\n  • A run (streak) of ≥3 in the same side, AND\n  • A dominance of ≥12/20 for that side (greens excluded from the attribute).\n\nPlay\n- Bet 1 unit on the leading side (R/B or H/L or E/O).\n- If a loss occurs, you may either:\n  • Switch to the new leader if dominance flips, OR\n  • Sit out 1 spin and re-check.\n\nExit / Switch\n- Stop using 50/50 when:\n  • The run breaks, OR\n  • Dominance falls below 12/20, OR\n  • The tracker issues a trend-change alert.',
+'Follow-the-Leader 50/50': 'Follow-the-Leader 50/50
+
+Entry
+- Color or High/Low run of ≥3.
+
+Bets
+- Stay with the streak with tight caps.
+- Exit quickly when streak breaks.'
+  };
+
+  function showExplain(play){
+    
+    // Normalize dynamic strategy names (e.g., "50/50 Edge Rider (Red/Black)")
+    var key = play;
+    if(key && key.indexOf("50/50 Edge Rider")===0) key = "50/50 Edge Rider";
+var t = STRATEGY_DETAILS[key] || play;
+    alert(t);
+  }
+function showExplain(play){
+    var txt = STRATEGY_DETAILS[key];
+    if(!txt) return;
+    alert(txt);
+  }
+
 
   function save(){
     try{
@@ -477,57 +703,218 @@ Tap spins. Tracks last 10/15/20: Junko quadrants, columns, dozens, red/black, hi
     return run;
   }
 
-  function suggest(vals){
-    if(vals.length < 10) return {state:"Observe", play:"Sit out", why:"Log 10–15 spins before betting."};
+  
+function scoreStrategies(vals){
+  // vals is newest-first numeric keys (0..36 or "00") from windowValues() (size windowN)
+  var w15 = vals.slice(0,15);
+  var w20 = vals.slice(0,20);
 
-    var rn = repeatNumberInfo(vals, 5);
-    var rs = repeatStreetInfo(vals, 3);
-    if(rn.flag || rs.flag){
-      var why = [];
-      if(rn.flag) why.push(rn.text);
-      if(rs.flag) why.push(rs.text);
-      return {state:"Repeat-Heavy", play:"6 Diamonds (Corner Core)", why:why.join(" • ")};
-    }
+  var cts15 = counts(w15);
+  var cts20 = counts(w20);
 
-    var w15 = spins.slice(0, Math.min(spins.length, 15)).map(function(x){ return x.n; });
-    var c15 = counts(w15);
-    var topCol = Math.max(c15.c1,c15.c2,c15.c3);
-    var topDoz = Math.max(c15.d1,c15.d2,c15.d3);
-    var topJun = Math.max(c15.gn,c15.ho,c15.lo,c15.m);
+  var rn = repeatNumberInfo(vals, 5);
+  var rs = repeatStreetInfo(vals, 3);
 
-    if(topCol>=7 || topDoz>=7 || topJun>=7){
-      if(topCol>=7){
-        var which = (c15.c1===topCol?1:(c15.c2===topCol?2:3));
-        return {state:"Concentrated", play:"Fibonacci Spiral — Column-Led Follow-Winner", why:"Column concentration: C"+which+" has "+topCol+" hits in last "+w15.length+"."};
+  // Table state (same concept as your core engine)
+  var tableState = "Flat / Choppy";
+  if(rn.flag || rs.flag){
+    tableState = "Repeat-Heavy";
+  } else {
+    var colMax15 = Math.max(cts15.c1, cts15.c2, cts15.c3);
+    var dozMax15 = Math.max(cts15.d1, cts15.d2, cts15.d3);
+    if(colMax15 >= 7 || dozMax15 >= 7){
+      tableState = "Concentrated";
+    } else {
+      var newest = vals[0];
+      var rbRun = 0, hlRun = 0;
+      if(!isGreen(newest)){
+        var isR = isRed(newest);
+        rbRun = currentRun(vals, function(v){ return !isGreen(v) && (isR ? isRed(v) : isBlack(v)); });
       }
-      var why2 = [];
-      if(topDoz>=7){
-        var dWhich = (c15.d1===topDoz?1:(c15.d2===topDoz?2:3));
-        why2.push("Dozen concentration: D"+dWhich+" has "+topDoz+" hits in last "+w15.length+".");
-      }
-      if(topJun>=7){
-        why2.push("Junko concentration: one segment has "+topJun+" hits in last "+w15.length+".");
-      }
-      return {state:"Concentrated", play:"Production (A/B)", why:why2.join(" • ")};
+      hlRun = currentRun(vals, function(v){ return (isHigh(newest) ? isHigh(v) : isLow(v)); });
+      if(Math.max(rbRun, hlRun) >= 3) tableState = "Streaky";
     }
-
-    var newest = vals[0];
-    var rbRun = 0;
-    if(!isGreen(newest)){
-      var isR = isRed(newest);
-      rbRun = currentRun(vals, function(v){ return !isGreen(v) && (isR ? isRed(v) : isBlack(v)); });
-    }
-    var hlRun = currentRun(vals, function(v){ return (isHigh(newest) ? isHigh(v) : isLow(v)); });
-
-    if(Math.max(rbRun, hlRun) >= 3){
-      var w = (rbRun>=3) ? ("R/B run: "+rbRun+" on "+(isRed(newest)?"Red":"Black")) : ("H/L run: "+hlRun+" on "+(isHigh(newest)?"High":"Low"));
-      return {state:"Streaky", play:"Follow-the-Leader 50/50", why:w};
-    }
-
-    return {state:"Flat / Choppy", play:"Disappearing Streets", why:"No active repeats, no concentration (≥7/15), no streak ≥3."};
   }
 
-  function spinsForExport(){
+  // DS Cash Power favorability (last-15)
+  var dsp = dsPickByCount(w15);
+  var dsSum = dsp.bestSum;
+  var dsHas3 = (dsp.best.d1 >= 3) || (dsp.best.d2 >= 3) || (dsp.best.d3 >= 3);
+  var dsFavorable = (dsSum >= 8) && dsHas3;
+
+  // Holy Grail proxy favorability: top 2 dozens dominate last-15
+  var dozArr = [cts15.d1, cts15.d2, cts15.d3].sort(function(a,b){return b-a;});
+  var hgFavorable = (dozArr[0] + dozArr[1] >= 12);
+
+  // Hot Quadrant last-15 favorability
+  var qMax = Math.max(cts15.gn, cts15.ho, cts15.lo, cts15.m);
+  var hotQuadFav = (qMax >= 6);
+
+  // Black Anchor proxy
+  var blackFav = (cts20.black >= 10);
+
+  // Columns balance (for FlipDozen/FlipColumn conditions)
+  var dozBalanced = (Math.max(cts15.d1,cts15.d2,cts15.d3) - Math.min(cts15.d1,cts15.d2,cts15.d3) <= 2);
+  var colBalanced = (Math.max(cts15.c1,cts15.c2,cts15.c3) - Math.min(cts15.c1,cts15.c2,cts15.c3) <= 2);
+
+  // Build scored list
+  var plays = [];
+
+  function add(name, score, why, tags){
+    plays.push({name:name, score:score, why:why, tags:tags||[]});
+  }
+
+  // 6 Diamonds
+  if(rn.flag || rs.flag){
+    add("6 Diamonds (Corner Core)", 92, (rn.flag?rn.text:"") + (rs.flag?(" • "+rs.text):""), ["repeat"]);
+  } else if(tableState==="Flat / Choppy"){
+    add("6 Diamonds (Corner Core)", 70, "Choppy mix: use coverage grinder while waiting for a clearer trend.", ["choppy"]);
+  }
+
+  // DS Cash Power
+  if(dsFavorable){
+    add("DS Cash Power", 90, "DS bias: best-sum "+dsSum+" in last-15 (D1 "+dsp.best.d1+", D2 "+dsp.best.d2+", D3 "+dsp.best.d3+").", ["ds"]);
+  }
+
+  // Holy Grail
+  if(hgFavorable){
+    add("Holy Grail (2-dozen)", 88, "Dozen dominance: top2="+(dozArr[0]+dozArr[1])+"/15.", ["dozen"]);
+  }
+
+  // Hot Quadrant last-15
+  if(hotQuadFav){
+    add("Hot Quadrant last-15 (Option A)", 87, "Junko quadrant hot: max="+qMax+"/15.", ["junko"]);
+  }
+
+  // Junko Quadrants (driest/hottest selection)
+  var qMin = Math.min(cts15.gn, cts15.ho, cts15.lo, cts15.m);
+  if(qMax >= 6 || qMin <= 1){
+    add("Junko Quadrants (hot/dry)", 78, (qMax>=6?("Momentum: quadrant hot at "+qMax+"/15."):("Drought: driest quadrant at "+qMin+"/15.")), ["junko"]);
+  }
+
+  // Black Anchor
+  if(blackFav){
+    add("Black Anchor", 72, "Black bias: "+cts20.black+"/20.", ["outside"]);
+  }
+
+  
+  // 50/50 Edge Rider (Red/Black, High/Low, Even/Odd) — only when conditions are strong
+  function attrColor(n){
+    if(n===0 || n==="00" || n===99) return "G";
+    return RED[n] ? "R" : (BLACK[n] ? "B" : "?");
+  }
+  function attrHL(n){
+    if(n===0 || n==="00" || n===99) return "G";
+    if(n>=1 && n<=18) return "L";
+    if(n>=19 && n<=36) return "H";
+    return "?";
+  }
+  function attrEO(n){
+    if(n===0 || n==="00" || n===99) return "G";
+    return (n%2===0) ? "E" : "O";
+  }
+  function longestRun(seq){
+    var best = {val:null, len:0};
+    var curVal=null, curLen=0;
+    for(var i=0;i<seq.length;i++){
+      var v=seq[i];
+      if(v==="G" || v==="?") { curVal=null; curLen=0; continue; }
+      if(v===curVal){ curLen++; } else { curVal=v; curLen=1; }
+      if(curLen>best.len){ best={val:curVal, len:curLen}; }
+    }
+    return best;
+  }
+  function dominance(seq, a, b){
+    var ca=0, cb=0;
+    seq.forEach(function(v){
+      if(v===a) ca++;
+      if(v===b) cb++;
+    });
+    return {a:ca,b:cb};
+  }
+
+  var rbSeq = w20.map(attrColor);
+  var hlSeq = w20.map(attrHL);
+  var eoSeq = w20.map(attrEO);
+
+  var rbRun = longestRun(rbSeq);
+  var hlRun = longestRun(hlSeq);
+  var eoRun = longestRun(eoSeq);
+
+  var rbDom = dominance(rbSeq, "R", "B");
+  var hlDom = dominance(hlSeq, "H", "L");
+  var eoDom = dominance(eoSeq, "E", "O");
+
+  function fiftyScore(run, dom){
+    var lead = Math.max(dom.a, dom.b);
+    var trail = Math.min(dom.a, dom.b);
+    var spread = lead - trail; // out of 20 (greens excluded already by filter)
+    // Require both: a real run AND dominance
+    if(run.len < 3) return {score:0, lead:lead, trail:trail, spread:spread};
+    if(lead < 12) return {score:0, lead:lead, trail:trail, spread:spread};
+    // Score: base 78 + run bonus + dominance bonus (cap at 95)
+    var s = 78 + (run.len-3)*4 + (lead-12)*2 + spread;
+    if(s>95) s=95;
+    return {score:s, lead:lead, trail:trail, spread:spread};
+  }
+
+  var rbS = fiftyScore(rbRun, rbDom);
+  var hlS = fiftyScore(hlRun, hlDom);
+  var eoS = fiftyScore(eoRun, eoDom);
+
+  // pick best 50/50 dimension if any
+  var best50 = {kind:null, score:0, run:null, lead:0, trail:0};
+  if(rbS.score > best50.score){ best50={kind:"Red/Black", score:rbS.score, run:rbRun, lead:rbS.lead, trail:rbS.trail}; }
+  if(hlS.score > best50.score){ best50={kind:"High/Low", score:hlS.score, run:hlS.run || hlRun, lead:hlS.lead, trail:hlS.trail}; }
+  if(eoS.score > best50.score){ best50={kind:"Even/Odd", score:eoS.score, run:eoRun, lead:eoS.lead, trail:eoS.trail}; }
+
+  if(best50.score > 0){
+    var runLabel = best50.kind+" run "+best50.run.len+" (last-20)";
+    var domLabel = "dominance "+best50.lead+"-"+best50.trail+" (last-20)";
+    add("50/50 Edge Rider ("+best50.kind+")", Math.round(best50.score), runLabel+" • "+domLabel, ["outside","fifty"]);
+  }
+
+
+// FlipDozen Switch Option A (balanced-only)
+  if(dozBalanced){
+    add("FlipDozen Switch (A: dozens balanced-only)", 62, "Dozens balanced (spread ≤2 in last-15).", ["dozen"]);
+  }
+
+  // Fallback
+  if(plays.length===0){
+    add("Sit out", 1, "No clear edge: log more spins until a repeat, bias, or streak appears.", ["observe"]);
+  }
+
+  // Sort and take top 3
+  plays.sort(function(a,b){ return b.score - a.score; });
+  var top = plays.slice(0,3);
+
+  // Secondary overlay suggestion: choose a second play if it is strong and in a different "tag family"
+  var primary = top[0];
+  var secondary = null;
+  for(var i=1;i<top.length;i++){
+    if(top[i].score >= 80){
+      // avoid same family
+      var overlap = false;
+      (primary.tags||[]).forEach(function(t){
+        if((top[i].tags||[]).indexOf(t)>=0) overlap = true;
+      });
+      if(!overlap){
+        secondary = top[i];
+        break;
+      }
+    }
+  }
+
+  return {state:tableState, plays:top, primary:primary, secondary:secondary};
+}
+
+function suggest(vals){
+  // Backwards-compatible wrapper for existing UI
+  var out = scoreStrategies(vals);
+  return {state:out.state, play:out.primary.name, why:out.primary.why};
+}
+spinsForExport(){
     if(exportScope==="all") return spins;
     if(exportScope==="session") return spins.filter(function(x){ return x.s===sessionId; });
     return spins.slice(0,20);
@@ -601,18 +988,90 @@ Tap spins. Tracks last 10/15/20: Junko quadrants, columns, dozens, red/black, hi
     var cts = counts(recent);
     cols.textContent = cts.c1 + " / " + cts.c2 + " / " + cts.c3;
     doz.textContent  = cts.d1 + " / " + cts.d2 + " / " + cts.d3;
+
+    if(ds){
+      var dsc = dsCounts(recent);
+      ds.textContent = "D1 "+dsc.d1[0]+"/"+dsc.d1[1]+"/"+dsc.d1[2] + " | D2 "+dsc.d2[0]+"/"+dsc.d2[1]+"/"+dsc.d2[2] + " | D3 "+dsc.d3[0]+"/"+dsc.d3[1]+"/"+dsc.d3[2];
+    }
     rb.textContent   = cts.red + " / " + cts.black;
     hl.textContent   = cts.high + " / " + cts.low;
     eo.textContent   = cts.even + " / " + cts.odd;
     junko.textContent= "GN " + cts.gn + " | HO " + cts.ho + " | LO " + cts.lo + " | M " + cts.m;
 
-    var s = suggest(recent);
+    
+    var scored = scoreStrategies(recent);
+    var s = {play:scored.primary.name, why:scored.primary.why, state:scored.state};
+
     recommend.textContent = s.play;
     reason.textContent = s.why || "—";
     state.textContent = s.state;
-    state2.textContent = "Window: last " + windowN;
+
+    // Top strategies list
+    if(topPlays){
+      topPlays.innerHTML = "";
+      scored.plays.forEach(function(p, i){
+        var div = document.createElement("div");
+        div.className = "playcard";
+        var sec = (scored.secondary && p.name===scored.secondary.name) ? " (overlay)" : "";
+        div.innerHTML = '<div class="playhdr"><div><div style="font-weight:800">'+(i+1)+'. '+p.name+sec+'</div><div class="small">'+escapeHtml(p.why||"—")+'</div></div><div class="pill">Score '+p.score+'</div></div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn mini" data-act="'+escapeHtml(p.name)+'">Set active</button><button class="btn mini" data-exp="'+escapeHtml(p.name)+'">Explain</button></div>';
+        topPlays.appendChild(div);
+      });
+      // wire buttons
+      Array.prototype.slice.call(topPlays.querySelectorAll("button")).forEach(function(b){
+        if(b.dataset && b.dataset.act){
+          b.onclick = function(){ setActive(b.dataset.act); render(); };
+        }
+        if(b.dataset && b.dataset.exp){
+          b.onclick = function(){ showExplain(b.dataset.exp); };
+        }
+      });
+    }
+
+    // Explain button (primary)
+    if(explainBtn){
+      if(STRATEGY_DETAILS[s.play] && s.play !== "Sit out"){
+        explainBtn.style.display = "inline-block";
+        explainBtn.onclick = function(){ showExplain(s.play); };
+      }else{
+        explainBtn.style.display = "none";
+        explainBtn.onclick = null;
+      }
+    }
+
+    // Trend change alert logic (simple, casino-friendly)
+    // If you have an active strategy, alert when it is no longer in the top list OR its score drops below 80 for 2 consecutive updates.
+    if(activeStrategy){
+      var activeObj = null;
+      scored.plays.forEach(function(p){ if(p.name===activeStrategy) activeObj=p; });
+      var activeOk = !!activeObj && activeObj.score >= 80;
+      if(!activeOk){
+        badCount += 1;
+      }else{
+        badCount = 0;
+      }
+
+      if(badCount >= 2){
+        alertBox.style.display = "block";
+        var next = scored.primary ? scored.primary.name : "Sit out";
+        alertText.textContent = "Active strategy looks unfavourable now: " + activeStrategy + ". Consider switching to: " + next + ".";
+      }else{
+        alertBox.style.display = "none";
+      }
+    }else{
+      alertBox.style.display = "none";
+    }
+
+    if(setActiveBtn){
+      setActiveBtn.onclick = function(){ setActive(s.play); render(); };
+    }
+    if(clearActiveBtn){
+      clearActiveBtn.onclick = function(){ setActive(""); render(); };
+    }
+
+    state2.textContent = "Window: last " + windowN + (activeStrategy ? (" • Active: " + activeStrategy) : "");
 
     lastList.value = spins.slice(0,20).map(function(x){ return (x.n==="00") ? "00" : String(x.n); }).join(", ");
+;
   }
 
   $("undoBtn").addEventListener("click", undo);
