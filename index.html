@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • BASE KEYPAD CONFIRMED — ADD TRACKING + WHEEL • v2 • Build: 2025-12-31</title>
+  <title>Roulette Trend Tracker • BASE KEYPAD CONFIRMED — ADD TRACKING + WHEEL • v2 • Build: 2025-12-31 • RIVERS READY • wheel + top3 + alert</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -71,6 +71,7 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2025-12-31 • RIVERS READY • v2</div>
     <div class="build">BASE KEYPAD CONFIRMED — ADD TRACKING + WHEEL • v2</div>
     <div class="sub">Build date: <b>2025-12-31</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
@@ -124,6 +125,14 @@
             </div>
             <div class="k" id="reason" style="margin-top:8px">No data yet.</div>
           </div>
+        <div id="trendAlert" class="alert" style="display:none;margin-top:10px">
+          <div style="font-weight:800;margin-bottom:4px">Trend change alert</div>
+          <div id="trendAlertText">—</div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="trendDismissBtn" type="button">Dismiss</button>
+          </div>
+        </div>
+        
           <div class="box">
             <div class="k">Table state</div>
             <div class="v" id="state">—</div>
@@ -980,7 +989,11 @@ Exit
     window.addEventListener("resize", ()=>{ if(wheelModal && wheelModal.style.display !== "none") drawWheelHistogram(20); });
   load();
   buildKeypad();
-  render();
+  
+  if(trendDismissBtn){
+    trendDismissBtn.onclick = function(){ if(trendAlert) trendAlert.style.display="none"; };
+  }
+render();
 });
 </script>
 </body>
