@@ -1,1 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tracker • Text Mode • Test</title>
+<style>
+  :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --me:#2563eb; --them:#111827; --border:#1f2a44;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .app{max-width:720px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  .topbar{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px}
+  .avatar{width:34px;height:34px;border-radius:999px;background:rgba(255,255,255,.08)}
+  .title{font-weight:800;line-height:1.1}
+  .subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+  .chat{flex:1;padding:14px 12px 10px;overflow:auto}
+  .row{display:flex;margin:10px 0}
+  .row.me{justify-content:flex-end}
+  .row.them{justify-content:flex-start}
+  .bubble{max-width:86%;padding:10px 12px;border-radius:18px;line-height:1.25;white-space:pre-wrap;word-wrap:break-word;border:1px solid rgba(255,255,255,.08)}
+  .me .bubble{background:rgba(37,99,235,.28);border-color:rgba(37,99,235,.45)}
+  .them .bubble{background:rgba(17,24,39,.95)}
+  .meta{font-size:11px;color:rgba(255,255,255,.55);margin-top:6px}
+  .inputbar{padding:10px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:10px;align-items:flex-end}
+  textarea{flex:1;resize:none;border-radius:16px;border:1px solid var(--border);background:#0b152b;color:var(--txt);padding:10px 12px;min-height:42px;max-height:140px;outline:none}
+  button{appearance:none;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--txt);font-weight:800;border-radius:14px;padding:10px 12px;cursor:pointer}
+  button:active{transform:translateY(1px)}
+  .hint{padding:8px 12px;color:var(--muted);font-size:12px;border-top:1px dashed rgba(255,255,255,.08)}
+  .pill{display:inline-block;padding:2px 8px;border:1px solid rgba(255,255,255,.14);border-radius:999px;font-size:11px;color:rgba(255,255,255,.8);margin-right:6px}
+  .good{border-color:rgba(52,211,153,.35)}
+  .warn{border-color:rgba(251,191,36,.35)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="avatar"></div>
+    <div>
+      <div class="title">Scott</div>
+      <div class="subtitle">Texting view • tracker test build</div>
+    </div>
+  </div>
 
+  <div id="chat" class="chat"></div>
+
+  <div class="hint" id="hint">
+    Paste history as comma-separated numbers (example: <b>0,00,34,23,5,17</b>) then tap <b>Send</b>.
+    After that, you can send a single new spin (e.g., <b>32</b>) or a short comma list.
+    Commands: <b>clear</b> (wipe), <b>export</b> (copy CSV), <b>wheel</b> (wheel histogram), <b>offline</b> (offline tips).
+  </div>
+
+  <div class="inputbar">
+    <textarea id="msg" placeholder="Type a spin or paste history…"></textarea>
+    <button id="send">Send</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "roulette_tracker_textmode_v1";
+  const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  const BLACK = new Set([2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35]);
+
+  const GN = new Set(["00",0,1,2,9,10,13,14,27,28]);
+  const HO = new Set([24,25,26,29,30,33,34,35,36]);
+  const LO = new Set([3,4,8,11,12,15,16,22,23]);
+  const MID= new Set([5,6,7,17,18,19,20,21,31,32]);
+
+  const $ = (id) => document.getElementById(id);
+  const chat = $("chat");
+  const msg = $("msg");
+  const sendBtn = $("send");
+
+  let spins = []; // newest-first: {n,t}
+  let historyLoaded = false;
+
+  function nowTime(){
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2,'0');
+    const mm = String(d.getMinutes()).padStart(2,'0');
+    return `${hh}:${mm}`;
+  }
+
+  function addBubble(side, text){
+    const row = document.createElement("div");
+    row.className = "row " + (side === "me" ? "me" : "them");
+    const b = document.createElement("div");
+    b.className = "bubble";
+    b.textContent = text;
+    row.appendChild(b);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function addBotBubble(htmlText){
+    const row = document.createElement("div");
+    row.className = "row them";
+    const b = document.createElement("div");
+    b.className = "bubble";
+    // allow small markup for pills only (safe)
+    b.innerHTML = htmlText;
+    row.appendChild(b);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function numToKey(token){
+    const t = String(token).trim();
+    if(!t) return null;
+    if(t === "00") return "00";
+    if(t === "0") return 0;
+    if(!/^-?\d+$/.test(t)) return null;
+    const n = Number(t);
+    if(!Number.isFinite(n)) return null;
+    if(n === 0) return 0;
+    if(n >= 1 && n <= 36) return n;
+    return null;
+  }
+
+  function parseNumbers(text){
+    const raw = String(text || "").trim();
+    if(!raw) return [];
+    // allow spaces and newlines
+    const parts = raw.split(/[\s,]+/).filter(Boolean);
+    const out = [];
+    for(const p of parts){
+      const k = numToKey(p);
+      if(k === null) continue;
+      out.push(k);
+    }
+    return out;
+  }
+
+  function isGreen(n){ return (n === "00" || Number(n) === 0); }
+  function isRed(n){ return (n !== "00" && RED.has(Number(n))); }
+  function isBlack(n){ return (n !== "00" && BLACK.has(Number(n))); }
+  function isHigh(n){ return (n !== "00" && Number(n) >= 19); }
+  function isLow(n){ return (n !== "00" && Number(n) >= 1 && Number(n) <= 18); }
+  function isEven(n){ return (n !== "00" && Number(n) !== 0 && Number(n)%2===0); }
+  function isOdd(n){ return (n !== "00" && Number(n)%2===1); }
+
+  function colOf(n){
+    if (n === "00" || n === 0) return null;
+    const v = Number(n);
+    if(!(v>=1 && v<=36)) return null;
+    const r = v % 3;
+    return r === 1 ? 1 : (r === 2 ? 2 : 3);
+  }
+  function dozenOf(n){
+    if (n === "00" || n === 0) return null;
+    const v = Number(n);
+    if(!(v>=1 && v<=36)) return null;
+    return v<=12 ? 1 : (v<=24 ? 2 : 3);
+  }
+  function streetId(n){
+    if (n === "00" || n === 0) return null;
+    const v = Number(n);
+    if(!(v>=1 && v<=36)) return null;
+    return Math.floor((v-1)/3) + 1;
+  }
+  function junkoBucket(n){
+    const k = (n === "00") ? "00" : Number(n);
+    if(GN.has(k)) return "GN";
+    if(HO.has(k)) return "HO";
+    if(LO.has(k)) return "LO";
+    if(MID.has(k)) return "M";
+    return null;
+  }
+
+  function dsKey(n){
+    if (n === "00" || n === 0) return null;
+    const v = Number(n);
+    if(!(v>=1 && v<=36)) return null;
+    const d = v<=12 ? 1 : (v<=24 ? 2 : 3);
+    const base = (d-1)*12;
+    const a = base+1, b = base+4, c = base+7;
+    if (v>=a && v<=a+5) return {d:d,i:1};
+    if (v>=b && v<=b+5) return {d:d,i:2};
+    if (v>=c && v<=c+5) return {d:d,i:3};
+    return {d:d,i:2};
+  }
+
+  function counts(vals){
+    const c = {
+      c1:0,c2:0,c3:0, d1:0,d2:0,d3:0,
+      red:0,black:0, high:0,low:0, even:0,odd:0,
+      gn:0,ho:0,lo:0,m:0, green:0,
+      streets:{}, nums:{}
+    };
+    for(const n of vals){
+      if(isGreen(n)) c.green++;
+      const col = colOf(n); if(col===1)c.c1++; if(col===2)c.c2++; if(col===3)c.c3++;
+      const d = dozenOf(n); if(d===1)c.d1++; if(d===2)c.d2++; if(d===3)c.d3++;
+      if(isRed(n)) c.red++;
+      if(isBlack(n)) c.black++;
+      if(isHigh(n)) c.high++;
+      if(isLow(n)) c.low++;
+      if(isEven(n)) c.even++;
+      if(isOdd(n)) c.odd++;
+      const jb = junkoBucket(n);
+      if(jb==="GN") c.gn++;
+      if(jb==="HO") c.ho++;
+      if(jb==="LO") c.lo++;
+      if(jb==="M") c.m++;
+      const st = streetId(n);
+      if(st) c.streets[st] = (c.streets[st]||0)+1;
+      const key = (n==="00")?"00":String(n);
+      c.nums[key] = (c.nums[key]||0)+1;
+    }
+    return c;
+  }
+
+  function dsCounts(vals){
+    const out = {d1:[0,0,0], d2:[0,0,0], d3:[0,0,0]};
+    for(const n of vals){
+      const k = dsKey(n);
+      if(!k) continue;
+      const arr = (k.d===1?out.d1:(k.d===2?out.d2:out.d3));
+      arr[k.i-1] += 1;
+    }
+    return out;
+  }
+
+  function repeatNumberWithin(vals, lookback){
+    if(vals.length<2) return false;
+    const newest = vals[0];
+    for(let i=1;i<Math.min(vals.length, lookback+1); i++){
+      if(vals[i]===newest) return true;
+    }
+    return false;
+  }
+
+  function repeatStreetWithin(vals, lookback){
+    if(vals.length<2) return false;
+    const s0 = streetId(vals[0]);
+    if(!s0) return false;
+    for(let i=1;i<Math.min(vals.length, lookback+1); i++){
+      const si = streetId(vals[i]);
+      if(si && si===s0) return true;
+    }
+    return false;
+  }
+
+  function currentRunLength(vals, classifier){
+    if(vals.length===0) return 0;
+    const a0 = classifier(vals[0]);
+    if(a0===null) return 0;
+    let r=1;
+    for(let i=1;i<vals.length;i++){
+      if(classifier(vals[i])!==a0) break;
+      r++;
+    }
+    return r;
+  }
+
+  function dominance(vals, classifier){
+    let a=0,b=0;
+    for(const n of vals){
+      const v = classifier(n);
+      if(v===true) a++;
+      if(v===false) b++;
+    }
+    return Math.max(a,b);
+  }
+
+  // ---------- SCORE MODEL (pragmatic thresholds; keeps your governance rules) ----------
+  function scoreAll(vals){
+    const w15 = vals.slice(0,15);
+    const w20 = vals.slice(0,20);
+    const c15 = counts(w15);
+    const dsc = dsCounts(w15);
+
+    const dozenMax = Math.max(c15.d1,c15.d2,c15.d3);
+    const colMax   = Math.max(c15.c1,c15.c2,c15.c3);
+    const hlMax    = Math.max(c15.high,c15.low);
+    const rbMax    = Math.max(c15.red,c15.black);
+    const junkoMax = Math.max(c15.gn,c15.ho,c15.lo,c15.m);
+    const junkoMin = Math.min(c15.gn,c15.ho,c15.lo,c15.m);
+
+    const mx1 = Math.max(...dsc.d1), mx2 = Math.max(...dsc.d2), mx3 = Math.max(...dsc.d3);
+    const dsSum = mx1 + mx2 + mx3;
+    const dsHas3 = (mx1>=3)||(mx2>=3)||(mx3>=3);
+
+    const repNum5 = repeatNumberWithin(w15, 5);
+    const repSt3  = repeatStreetWithin(w15, 3);
+    const repSt5  = repeatStreetWithin(w15, 5);
+
+    const runHL = currentRunLength(w20, (n)=> isGreen(n)?null:(isHigh(n)?true:false));
+    const domHL20 = dominance(w20, (n)=> isGreen(n)?null:(isHigh(n)?true:false));
+
+    const uniq20 = new Set(w20.map(n => (n==="00")?"00":String(n))).size;
+
+    // table state (simple)
+    let tableState = "Flat / Choppy";
+    if(repNum5 || repSt3) tableState = "Repeat-Heavy";
+    else if(dozenMax >= 8 || colMax >= 8 || hlMax >= 9 || junkoMax >= 7) tableState = "Structured";
+
+    const plays = [];
+    const add = (mode, name, score, why) => plays.push({mode,name,score,why});
+
+    // -------- CASH TOP 8 --------
+    // CASH 1 — Slow & Steady (Dozen/Column)
+    {
+      let s = 60;
+      if(dozenMax>=10 || colMax>=10) s=95;
+      else if(dozenMax>=9 || colMax>=9) s=92;
+      else if(dozenMax>=8 || colMax>=8) s=88;
+      else if(dozenMax>=7 || colMax>=7) s=85;
+      add("CASH","Slow & Steady (Structural Bias)", s, `Doz max=${dozenMax}/15 • Col max=${colMax}/15. Exit on break.`);
+    }
+
+    // CASH 2 — DS Cash Power (Street cluster)
+    {
+      let s = 60;
+      if(dsSum>=10 && dsHas3) s=92;
+      else if(dsSum>=9 && dsHas3) s=88;
+      else if(dsSum>=8 && dsHas3) s=85;
+      else if(dsSum>=7) s=78;
+      add("CASH","DS Cash Power (Street Cluster)", s, `DS bias sum=${dsSum} (D1 ${mx1}, D2 ${mx2}, D3 ${mx3}). Abort if weakens.`);
+    }
+
+    // CASH 3 — Gold Mine (High/Low)
+    {
+      let s = 60;
+      if(hlMax>=11) s=95;
+      else if(hlMax>=10) s=92;
+      else if(hlMax>=9) s=88;
+      else if(hlMax>=8) s=85;
+      add("CASH","Gold Mine (Even-Money Compression)", s, `HL max=${hlMax}/15. Exit when dominance drops.`);
+    }
+
+    // CASH 4 — Follow-the-Leader 50/50
+    {
+      let s = 55;
+      if(runHL>=5 && domHL20>=13) s=92;
+      else if(runHL>=4 && domHL20>=12) s=88;
+      else if(runHL>=3 && domHL20>=12) s=85;
+      else if(runHL>=3 && domHL20>=11) s=80;
+      add("CASH","Follow-the-Leader 50/50", s, `Run(H/L)=${runHL} • Dominance last20=${domHL20}/20. Exit on first streak break.`);
+    }
+
+    // CASH 5 — Junko Hot
+    {
+      let s = 60;
+      if(junkoMax>=8) s=92;
+      else if(junkoMax>=7) s=88;
+      else if(junkoMax>=6) s=85;
+      else if(junkoMax>=5) s=80;
+      add("CASH","Junko Hot (Quadrant Momentum)", s, `Junko max=${junkoMax}/15. Flat only. Short leash 10–15 spins.`);
+    }
+
+    // CASH 6 — Win 28 (Coverage Probe)
+    {
+      // interpret as "coverage present / not hostile": use unique count in last20
+      let s = 60;
+      if(uniq20>=17) s=88;
+      else if(uniq20>=16) s=86;
+      else if(uniq20>=15) s=85;
+      else if(uniq20>=14) s=80;
+      add("CASH","Win 28 (Coverage Probe)", s, `Unique last20=${uniq20}. Flat only. Abort early if hostile.`);
+    }
+
+    // CASH 7 — Anti-Last-Dozen (Mean Reversion)
+    {
+      // no dominant dozen but balanced rotation
+      const minDoz = Math.min(c15.d1,c15.d2,c15.d3);
+      let s = 55;
+      if(dozenMax<=6 && minDoz>=4) s=88;
+      else if(dozenMax<=6 && minDoz>=3) s=85;
+      else if(dozenMax<=7 && minDoz>=3) s=80;
+      add("CASH","Anti-Last-Dozen (Mean Reversion)", s, `Dozens: ${c15.d1}/${c15.d2}/${c15.d3}. Conservative ladder; abort on failure.`);
+    }
+
+    // CASH 8 — Disappearing Streets (Anti-Repeat)
+    {
+      let s = 55;
+      if(!repSt5 && tableState==="Flat / Choppy") s=88;
+      else if(!repSt5) s=85;
+      else s=70;
+      add("CASH","Disappearing Streets (Anti-Repeat)", s, `Repeat streets last5=${repSt5?"YES":"NO"}. Remove winners; abort if repeats emerge.`);
+    }
+
+    // -------- COMP (default/fallback) --------
+    {
+      let s = 78;
+      if(tableState==="Repeat-Heavy") s=92;
+      else if(tableState==="Structured") s=84;
+      add("COMP","6 Diamonds + 0/00 (Primary)", s, (tableState==="Repeat-Heavy") ? "Repeat-heavy: coverage grinder is preferred." : "Default forced-play coverage. Wide coverage. Progression capped at Step 1.");
+    }
+    {
+      let s = 70;
+      if(colMax>=7) s=80;
+      add("COMP","Point Pusher", s, `Columns/shape engagement. Col max=${colMax}/15. Flat betting.`);
+    }
+    {
+      let s = 68;
+      if(junkoMin<=2) s=78;
+      add("COMP","Junko Dry (Flat)", s, `Junko min=${junkoMin}/15. Low volatility; used in quadrant droughts.`);
+    }
+    {
+      let s = 66;
+      if(dsSum>=7) s=76;
+      add("COMP","DS Cash Power (Base Only)", s, `Mild clustering without escalation. DS sum=${dsSum}.`);
+    }
+    {
+      // greens heavy / noise
+      let s = 72;
+      if(c15.green>=3) s=90;
+      else if(c15.green>=2) s=83;
+      add("COMP","Minimum Bet Placeholder", s, `Green count last15=${c15.green}. Extreme noise / greens heavy. Near stop-loss behavior.`);
+    }
+
+    // sort
+    plays.sort((a,b)=> b.score - a.score);
+
+    // recommendation governance:
+    const top = plays[0];
+    let recommended = top;
+    let modeReason = "";
+
+    if(top.mode==="CASH" && top.score>=85){
+      recommended = top;
+      modeReason = `<span class="pill good">CASH qualified</span> Top is CASH and score ≥ 85.`;
+    } else {
+      // best COMP
+      recommended = plays.find(p => p.mode==="COMP") || top;
+      modeReason = `<span class="pill warn">COMP default</span> CASH not qualified (top score < 85 or not #1).`;
+    }
+
+    return {plays, recommended, modeReason, metrics:{tableState, dozenMax, colMax, hlMax, rbMax, junkoMax, green:c15.green, uniq20, dsSum, mx1,mx2,mx3}};
+  }
+
+  function formatTrend(metrics){
+    const lines = [];
+    lines.push(`<b>Trend snapshot</b> <span class="pill">${metrics.tableState}</span>`);
+    lines.push(`• Window: last 15`);
+    lines.push(`• Dozen max: ${metrics.dozenMax}/15 • Column max: ${metrics.colMax}/15`);
+    lines.push(`• High/Low max: ${metrics.hlMax}/15 • Red/Black max: ${metrics.rbMax}/15`);
+    lines.push(`• Junko max: ${metrics.junkoMax}/15 • Greens: ${metrics.green}`);
+    lines.push(`• DS bias sum: ${metrics.dsSum} (D1 ${metrics.mx1}, D2 ${metrics.mx2}, D3 ${metrics.mx3})`);
+    lines.push(`• Unique last20: ${metrics.uniq20}`);
+    return lines.join("\n");
+  }
+
+  function formatTop3(plays){
+    const top3 = plays.slice(0,3);
+    const lines = [];
+    lines.push(`<b>Top 3 strategies right now</b>`);
+    top3.forEach((p,i)=>{
+      lines.push(`${i+1}. <b>${p.mode}</b> — ${escapeHtml(p.name)}  <span class="pill">${p.mode} • ${p.score}</span>\n${escapeHtml(p.why)}`);
+    });
+    return lines.join("\n\n");
+  }
+
+  function escapeHtml(s){
+    return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  function botReply(){
+    const vals = spins.map(x => x.n); // newest-first
+    if(vals.length < 10){
+      addBotBubble(`<b>Need more spins</b>\nLog at least 10 spins for stable reads. Spins logged: ${vals.length}.`);
+      return;
+    }
+    const scored = scoreAll(vals);
+    const rec = scored.recommended;
+
+    const header = `<b>Recommended</b>\n<b>${rec.mode}</b> — ${escapeHtml(rec.name)} <span class="pill">${rec.mode} • ${rec.score}</span>\n${escapeHtml(rec.why)}\n\n${scored.modeReason}`;
+    const body = formatTrend(scored.metrics);
+    const top3 = formatTop3(scored.plays);
+
+    addBotBubble(`${header}\n\n${escapeHtml(body)}\n\n${top3}`.replace(/\n/g,"<br><b>offline</b><br>• Offline reminders + backup tips (cruise/airplane mode)<br>"));
+  }
+
+  function save(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        spins, historyLoaded
+      }));
+    }catch(_){}
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(Array.isArray(obj.spins)){
+        spins = obj.spins.map(x => {
+          const n = numToKey(x.n);
+          const t = Number(x.t)||Date.now();
+          return (n===null)?null:{n,t};
+        }).filter(Boolean);
+      }
+      historyLoaded = !!obj.historyLoaded;
+    }catch(_){}
+  }
+
+  function toCsv(){
+    const lines = ["number,date,time"];
+    const arr = spins.slice().reverse();
+    for(const x of arr){
+      const d = new Date(x.t);
+      const yyyy = String(d.getFullYear());
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mi = String(d.getMinutes()).padStart(2,'0');
+      const ss = String(d.getSeconds()).padStart(2,'0');
+      const n = (x.n==="00") ? "00" : String(x.n);
+      lines.push(`${n},${yyyy}-${mm}-${dd},${hh}:${mi}:${ss}`);
+    }
+    return lines.join("\n");
+  }
+
+  
+  function wheelHistogramText(lastN=20){
+    // American wheel order (clockwise)
+    const WHEEL = [0,28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,"00",27,10,25,29,12,8,19,31,18,6,21,33,16,4,23,35,14,2];
+    const slice = spins.slice(0, lastN); // newest-first objects {n,t}
+    const cts = {};
+    for(const x of slice){
+      const k = (x.n==="00") ? "00" : String(x.n);
+      cts[k] = (cts[k]||0) + 1;
+    }
+    let maxC = 0;
+    for(const n of WHEEL){
+      const k = (n==="00")?"00":String(n);
+      maxC = Math.max(maxC, cts[k]||0);
+    }
+    const bar = (k) => {
+      const c = cts[k]||0;
+      if(c===0) return "";
+      // scale to 10 blocks max
+      const len = Math.max(1, Math.round((c / Math.max(1,maxC)) * 10));
+      return "█".repeat(len);
+    };
+
+    // Top hits summary
+    const tops = Object.entries(cts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const topLine = tops.length
+      ? tops.map(([k,v])=>`${k}(${v})`).join(", ")
+      : "none";
+
+    let out = "";
+    out += `Wheel histogram (last ${lastN})\n`;
+    out += `Top hits: ${topLine}\n\n`;
+    out += `Order: 0,28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,00,27,10,25,29,12,8,19,31,18,6,21,33,16,4,23,35,14,2\n\n`;
+    for(const n of WHEEL){
+      const k = (n==="00")?"00":String(n);
+      const c = cts[k]||0;
+      const pad = k.length===1 ? " " : "";
+      out += `${pad}${k}: ${String(c).padStart(2," ")} ${bar(k)}\n`;
+    }
+    return out.trim();
+  }
+
+
+  async function doExport(){
+    const csv = toCsv();
+    try{
+      await navigator.clipboard.writeText(csv);
+      addBotBubble(`<b>Exported</b><br>CSV copied to clipboard (${spins.length} spins).`);
+    }catch(_){
+      addBotBubble(`<b>Clipboard blocked</b><br>Copy manually below:<br><br><pre style="margin:0;white-space:pre-wrap">${escapeHtml(csv)}</pre>`);
+    }
+  }
+
+  function clearAll(){
+    spins = [];
+    historyLoaded = false;
+    localStorage.removeItem(STORAGE_KEY);
+    chat.innerHTML = "";
+    addBotBubble(`<b>Ready.</b><br>Paste history as comma-separated numbers, then Send.`);
+  }
+
+  function ingestNumbers(nums, asHistory){
+    const t0 = Date.now();
+    if(asHistory){
+      // assume nums provided oldest->newest; store newest-first
+      const ordered = nums.slice();
+      const normalized = ordered.map(numToKey).filter(x=>x!==null);
+      const withTime = normalized.map((n,i)=>({n, t:t0 - (normalized.length-i)*1000}));
+      spins = withTime.reverse().concat(spins); // newest-first
+      historyLoaded = true;
+    } else {
+      // add in the order given (treat last token as most recent)
+      for(let i=0;i<nums.length;i++){
+        const n = numToKey(nums[i]);
+        if(n===null) continue;
+        spins.unshift({n, t: Date.now()});
+      }
+    }
+    // cap
+    if(spins.length > 5000) spins = spins.slice(0,5000);
+    save();
+  }
+
+  function onSend(){
+    const text = (msg.value||"").trim();
+    if(!text) return;
+
+    addBubble("me", text);
+    msg.value = "";
+    msg.style.height = "42px";
+
+    const lower = text.toLowerCase();
+    if(lower === "clear"){
+      clearAll();
+      return;
+    }
+    if(lower === "export"){
+      return;
+    }
+
+    if(lower === "offline"){
+      addBotBubble(
+        `<b>Offline reminders</b><br>` +
+        `• Spins save automatically on-device (no internet needed).<br>` +
+        `• On long trips, text <b>export</b> occasionally and paste the CSV into Notes / a draft message as a backup.<br>` +
+        `• Avoid Private Browsing (data may not persist).<br>` +
+        `• Don’t clear Safari website data until you’ve exported/backed up.<br>` +
+        `• Re-import later by pasting a comma list or the exported CSV.`
+      );
+      return;
+    }
+
+
+    if(lower === "wheel"){
+      if(spins.length===0){
+        addBotBubble(`<b>No spins yet</b><br>Paste history first, then text <b>wheel</b>.`);
+      } else {
+        const txt = wheelHistogramText(20);
+        addBotBubble(`<b>Wheel View</b><br><pre style="margin:0;white-space:pre-wrap;line-height:1.25">${escapeHtml(txt)}</pre>`);
+      }
+
+      doExport();
+      return;
+    }
+
+    const nums = parseNumbers(text);
+    if(nums.length === 0){
+      addBotBubble(`<b>Unrecognized</b><br>Send numbers like <b>17</b> or a comma list like <b>0,00,34,23</b>.`);
+      return;
+    }
+
+    if(!historyLoaded){
+      ingestNumbers(nums, true);
+      addBotBubble(`<b>History loaded</b><br>${nums.length} spins ingested. Now send new spins one at a time (or small comma lists).`);
+      botReply();
+    } else {
+      ingestNumbers(nums, false);
+      botReply();
+    }
+  }
+
+  // autosize textarea
+  msg.addEventListener("input", () => {
+    msg.style.height = "42px";
+    msg.style.height = Math.min(msg.scrollHeight, 140) + "px";
+  });
+  sendBtn.addEventListener("click", onSend);
+  msg.addEventListener("keydown", (e) => {
+    if(e.key === "Enter" && !e.shiftKey){
+      e.preventDefault();
+      onSend();
+    }
+  });
+
+  load();
+  if(spins.length === 0){
+    addBotBubble(`<b>Ready.</b><br>Paste history as comma-separated numbers, then Send.`);
+  } else {
+    addBotBubble(`<b>Restored</b><br>${spins.length} spins loaded from this device.`);
+    historyLoaded = true;
+    botReply();
+  }
+})();
+</script>
+</body>
+</html>
