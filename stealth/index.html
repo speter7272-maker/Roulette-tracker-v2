@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<!-- STEALTH TEXT MODE — v0.3 (status fix + offline cleanup) -->
 <title>Tracker • Text Mode • Test</title>
 <style>
   :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --me:#2563eb; --them:#111827; --border:#1f2a44;}
@@ -37,7 +38,7 @@
     <div class="avatar"></div>
     <div>
       <div class="title">Scott</div>
-      <div class="subtitle">Texting view • tracker test build</div>
+      <div class="subtitle">Texting view • STEALTH TEXT MODE — v0.3 (status fix + offline cleanup)</div>
     </div>
   </div>
 
@@ -608,7 +609,13 @@ function wheelHistogramText(lastN=20){
       return;
     }
 
-    const nums = parseNumbers(text);
+    
+    if(lower === "status"){
+      botReply();
+      return;
+    }
+
+const nums = parseNumbers(text);
     if(nums.length === 0){
       addBotBubble(`<b>Unrecognized</b><br>Send numbers like <b>17</b> or a comma list like <b>0,00,34,23</b>.`);
       return;
