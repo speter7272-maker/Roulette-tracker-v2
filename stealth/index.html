@@ -1,68 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Stealth Text Mode • v1.1 • Build 2026-01-05 • sendfix + explain numbers + opposite segment</title>
-  <style>
-    :root{color-scheme:dark; --bg:#070b14; --panel:#0f1a2e; --chip:#111c33; --border:#1f2a44; --txt:#e5e7eb; --muted:#94a3b8;}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#060911,#070b14 40%,#060911);color:var(--txt)}
-    .wrap{max-width:760px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-    .topbar{padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(8,12,20,.6);backdrop-filter:blur(10px);position:sticky;top:0;z-index:3}
-    .name{font-weight:800;font-size:18px;line-height:1}
-    .sub{margin-top:6px;color:var(--muted);font-size:12px}
-    .chat{flex:1;padding:14px;display:flex;flex-direction:column;gap:10px}
-    .row{display:flex}
-    .row.me{justify-content:flex-end}
-    .bubble{max-width:min(560px,92%);padding:10px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.05);box-shadow:0 10px 28px rgba(0,0,0,.25)}
-    .row.me .bubble{background:rgba(59,130,246,.22);border-color:rgba(59,130,246,.28)}
-    .hdr{display:flex;gap:8px;align-items:center;margin-bottom:6px}
-    .tag{font-size:11px;color:var(--muted)}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.25);font-size:11px;color:var(--muted)}
-    .b{font-weight:800}
-    .small{font-size:12px;line-height:1.35;color:var(--txt)}
-    .muted{color:var(--muted)}
-    .kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-    .card{padding:10px;border-radius:14px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04)}
-    .k{font-size:11px;color:var(--muted)}
-    .v{font-size:16px;font-weight:900;margin-top:2px}
-    .v.mono{font-size:15px}
-    .inputbar{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06);background:rgba(8,12,20,.7);backdrop-filter:blur(10px);position:sticky;bottom:0}
-    .hint{font-size:12px;color:var(--muted);margin-bottom:8px}
-    .form{display:flex;gap:10px}
-    input{flex:1;border-radius:16px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.05);color:var(--txt);padding:12px 12px;font-size:16px;outline:none}
-    button{border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.08);color:var(--txt);padding:12px 14px;font-weight:800;font-size:16px}
-    button:active{transform:translateY(1px)}
-    a{color:inherit}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>STEALTH TEXT MODE v1.4 • Send stable</title>
+<style>
+:root{color-scheme:dark;--bg:#070b14;--panel:#0b1220;--bubbleIn:#121b2f;--bubbleOut:#17325e;--txt:#e5e7eb;--muted:#94a3b8;--border:rgba(255,255,255,.10);--pill:rgba(255,255,255,.08)}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1400px 800px at 30% 0%, #0b1832, var(--bg));color:var(--txt)}
+.header{padding:16px 14px 10px 14px;border-bottom:1px solid var(--border);background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,0))}
+.h1{font-size:26px;font-weight:800;letter-spacing:.2px}
+.h2{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.25}
+.wrap{max-width:820px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.chat{flex:1; padding:14px; display:flex; flex-direction:column; gap:10px; overflow:auto}
+.bubble{max-width:92%; padding:12px 12px; border-radius:18px; border:1px solid var(--border); box-shadow:0 12px 32px rgba(0,0,0,.25)}
+.in{align-self:flex-start; background:rgba(18,27,47,.85)}
+.out{align-self:flex-end; background:rgba(23,50,94,.72); border-color:rgba(96,165,250,.25)}
+.meta{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:6px}
+.pill{display:inline-flex; align-items:center; gap:6px; padding:2px 9px; border-radius:999px; background:var(--pill); border:1px solid rgba(255,255,255,.10); font-size:12px; color:var(--muted)}
+pre{margin:0; white-space:pre-wrap; word-break:break-word; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-size:12px; line-height:1.35}
+.footer{padding:12px 12px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--border); background:linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.35))}
+form{display:flex; gap:10px; align-items:center}
+input[type="text"]{flex:1; padding:14px 14px; border-radius:16px; border:1px solid rgba(255,255,255,.14); background:rgba(7,11,20,.55); color:var(--txt); outline:none}
+button{padding:14px 16px; border-radius:16px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.08); color:var(--txt); font-weight:800; cursor:pointer}
+button:active{transform:translateY(1px)}
+.smallhint{color:var(--muted); font-size:12px; margin-top:10px; line-height:1.35}
+a{color:#9ec5ff}
+</style>
 </head>
-<body data-build="v1.1 • 2026-01-05 • sendfix + explain numbers + opposite segment">
+<body>
 <div class="wrap">
-  <div class="topbar">
-    <div class="name" id="contactName">Scott</div>
-    <div class="sub" id="buildLine">Texting view • STEALTH TEXT MODE — v1.3 (sendfix: prevent form submit reload)</div>
+  <div class="header">
+    <div class="h1">Scott</div>
+    <div class="h2">Texting view • STEALTH TEXT MODE — v1.4 (rewrite send-stable) • Build 2026-01-05</div>
   </div>
 
-  <div class="chat" id="chat"></div>
+  <div id="chat" class="chat" aria-live="polite"></div>
 
-  <div class="inputbar">
-    <div class="hint" id="hint">
-      Paste history as comma-separated numbers (example: <span class="mono">0,00,34,23,5,17</span>) then tap <b>Send</b>.
-      Commands: <b>status</b>, <b>trend</b>, <b>explain</b>, <b>explain 2</b>, <b>wheel</b>, <b>export</b>, <b>offline</b>, <b>clear</b>.
+  <div class="footer">
+    <form id="composer" action="javascript:void(0);">
+      <input id="msg" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"
+             placeholder="Type a spin, comma list, or command…"/>
+      <button id="send" type="submit">Send</button>
+    </form>
+    <div class="smallhint">
+      First: paste history as comma-separated numbers (example: <b>0,00,34,23,5,17</b>) then Send.<br/>
+      Commands: <b>status</b>, <b>trend</b>, <b>explain</b>, <b>explain 2</b>, <b>wheel</b>, <b>export</b>, <b>offline</b>, <b>clear</b>, <b>help</b>.<br/>
+      Set casino: <b>casino Caesars</b>
     </div>
-    <form id="composerForm" class="form" autocomplete="off">
-<input id="msg" type="text" placeholder="Type a spin, a comma list, or a command…" autocomplete="off" autocapitalize="none" />
-      <button id="send" type="button">Send</button>
-</form>
   </div>
 </div>
 
 <script>
 (() => {
-  const VERSION = "STEALTH TEXT MODE — v1.2 (iOS send/submit fix + error bubble)";
-  const STORAGE_KEY = "roulette_stealth_v0_8";
+  "use strict";
+
+  // ---------- Safety: surface errors in chat ----------
+  const ERRKEY = "stealth_last_error_v1_4";
+  window.addEventListener("error", (e) => {
+    try { localStorage.setItem(ERRKEY, String(e.message || e.error || e)); } catch(_) {}
+  });
+
+  const STORAGE_KEY = "roulette_stealth_textmode_v1_4";
   const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
   const BLACK = new Set([2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35]);
 
@@ -72,101 +71,148 @@
   const LO = new Set([3,4,8,11,12,15,16,22,23]);
   const MID= new Set([5,6,7,17,18,19,20,21,31,32]);
 
-  // Opposite-Segment Contrarian (stress test) segments (00 as "00")
+  // Opposite Segment strategy sets (00 represented as "00"; 0 is 0)
   const SEG_A = new Set([13,1,"00",27,10,9,28,0,2,14]);
   const SEG_B = new Set([31,18,6,21,33,17,5,22,32,20]);
-  const SEG_C = new Set([25,29,12,8,19,26,30,11,7]); // 9
-  const SEG_D = new Set([36,24,3,15,34,35,23,4,16]); // 9
-  const TIE_ORDER = ["A","B","C","D"];
-  function segOf(n){
-    const k = (n==="00") ? "00" : Number(n);
-    if(SEG_A.has(k)) return "A";
-    if(SEG_B.has(k)) return "B";
-    if(SEG_C.has(k)) return "C";
-    if(SEG_D.has(k)) return "D";
-    return null;
+  const SEG_C = new Set([25,29,12,8,19,26,30,11,7]);
+  const SEG_D = new Set([36,24,3,15,34,35,23,4,16]);
+  const SEG_ORDER = ["A","B","C","D"];
+
+  function oppositeSeg(name){
+    if(name==="A") return "C";
+    if(name==="B") return "D";
+    if(name==="C") return "A";
+    return "B";
   }
-  function oppositeSeg(s){
-    if(s==="A") return "C";
-    if(s==="B") return "D";
-    if(s==="C") return "A";
-    if(s==="D") return "B";
-    return null;
-  }
-  function segSet(s){
-    if(s==="A") return SEG_A;
-    if(s==="B") return SEG_B;
-    if(s==="C") return SEG_C;
-    if(s==="D") return SEG_D;
-    return null;
+  function segSet(name){
+    if(name==="A") return SEG_A;
+    if(name==="B") return SEG_B;
+    if(name==="C") return SEG_C;
+    return SEG_D;
   }
 
-  let casino = "";
-  let awaitingCasino = false;
-  let spins = []; // newest-first; each {n,t,s}
-  let sessionId = 1;
-  let windowN = 15;
+  const state = {
+    spins: [], // newest-first, each entry: {n, t}
+    casino: "",
+    lastTop: [], // {name,score,tag,howto,numbers}
+    lastTrend: ""
+  };
 
   const $ = (id) => document.getElementById(id);
 
-  // Surface runtime errors inside the chat (prevents "silent white screen" confusion)
-  window.addEventListener("error", (ev) => {
-    try {
-      const msg = (ev && ev.message) ? ev.message : "Unknown error";
-      pushBubble("⚠️ App error: " + msg + "\n(Refresh after replacing index.html)", false);
-    } catch(_) {}
-  });
+  function nowISO(){
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
 
-  function now(){ return Date.now(); }
+  function pushBubble(text, kind="in", metaPills=[]){
+    const chat = $("chat");
+    const wrap = document.createElement("div");
+    wrap.className = "bubble " + (kind==="out" ? "out" : "in");
+    if(metaPills && metaPills.length){
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      metaPills.forEach(p => {
+        const s = document.createElement("span");
+        s.className="pill";
+        s.textContent = p;
+        meta.appendChild(s);
+      });
+      wrap.appendChild(meta);
+    }
+    const pre = document.createElement("pre");
+    pre.innerHTML = text; // we will only inject safe text we generate (no user html)
+    wrap.appendChild(pre);
+    chat.appendChild(wrap);
+    // scroll
+    requestAnimationFrame(()=>{ chat.scrollTop = chat.scrollHeight; });
+  }
 
-  function numToKey(x){
-    if(x === "00") return "00";
-    if(typeof x === "string" && x.trim() === "00") return "00";
-    const v = Number(String(x).trim());
-    if(!Number.isFinite(v)) return null;
-    if(v === 0) return 0;
-    if(v >= 1 && v <= 36) return v;
+  function escapeHTML(s){
+    return String(s).replace(/[&<>"]/g, (c)=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  }
+
+  function save(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        spins: state.spins,
+        casino: state.casino
+      }));
+    }catch(_){}
+  }
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      if(Array.isArray(obj.spins)) state.spins = obj.spins.filter(x=>x && (x.n===0 || x.n==="00" || (Number.isFinite(Number(x.n)) && Number(x.n)>=1 && Number(x.n)<=36)))
+                                                  .map(x=>({n:(x.n==="00"?"00":Number(x.n)), t:Number(x.t)||Date.now()}));
+      if(typeof obj.casino==="string") state.casino = obj.casino;
+    }catch(_){}
+  }
+
+  function parseToken(tok){
+    const t = String(tok||"").trim();
+    if(!t) return null;
+    if(t==="00") return "00";
+    if(t==="0") return 0;
+    const n = Number(t);
+    if(!Number.isFinite(n)) return null;
+    if(n===0) return 0;
+    if(n>=1 && n<=36) return n;
     return null;
   }
 
-  function isGreen(n){ return (n === "00" || Number(n) === 0); }
-  function isRed(n){ return (n !== "00" && RED.has(Number(n))); }
-  function isBlack(n){ return (n !== "00" && BLACK.has(Number(n))); }
-  function isHigh(n){ return (n !== "00" && Number(n) >= 19); }
-  function isLow(n){ return (n !== "00" && Number(n) >= 1 && Number(n) <= 18); }
-  function isEven(n){ return (n !== "00" && Number(n) !== 0 && Number(n)%2===0); }
-  function isOdd(n){ return (n !== "00" && Number(n)%2===1); }
+  function parseCommaList(s){
+    const parts = String(s||"").split(/[,\s]+/).filter(Boolean);
+    const out = [];
+    for(const p of parts){
+      const v = parseToken(p);
+      if(v===null) continue;
+      out.push(v);
+    }
+    return out;
+  }
 
+  function windowVals(n=15){
+    return state.spins.slice(0,n).map(x=>x.n);
+  }
+  function isGreen(n){ return n===0 || n==="00"; }
   function colOf(n){
-    if(n==="00" || n===0) return null;
-    const v = Number(n);
-    if(!(v>=1 && v<=36)) return null;
-    const r = v % 3;
+    if(isGreen(n)) return null;
+    const v=Number(n);
+    const r=v%3;
     return r===1?1:(r===2?2:3);
   }
   function dozenOf(n){
-    if(n==="00" || n===0) return null;
-    const v = Number(n);
-    if(!(v>=1 && v<=36)) return null;
+    if(isGreen(n)) return null;
+    const v=Number(n);
     return v<=12?1:(v<=24?2:3);
   }
   function streetId(n){
-    if(n==="00" || n===0) return null;
-    const v = Number(n);
-    if(!(v>=1 && v<=36)) return null;
-    return Math.floor((v-1)/3)+1; // 1..12
+    if(isGreen(n)) return null;
+    const v=Number(n);
+    return Math.floor((v-1)/3)+1; //1..12
   }
-  function dsKey(n){
-    if(n==="00" || n===0) return null;
-    const v = Number(n);
-    if(!(v>=1 && v<=36)) return null;
-    const d = v<=12?1:(v<=24?2:3);
-    const base = (d-1)*12;
-    const a = base+1, b = base+4, c = base+7;
-    if(v>=a && v<=a+5) return {d, i:1};
-    if(v>=b && v<=b+5) return {d, i:2};
-    if(v>=c && v<=c+5) return {d, i:3};
-    return {d, i:2};
+  function cornerOf(n){
+    // return one of the fixed 6 diamonds corners index if in them (1..6) else null
+    if(isGreen(n)) return null;
+    const v=Number(n);
+    const corners = [
+      new Set([1,2,4,5]),
+      new Set([7,8,10,11]),
+      new Set([13,14,16,17]),
+      new Set([19,20,22,23]),
+      new Set([25,26,28,29]),
+      new Set([31,32,34,35])
+    ];
+    for(let i=0;i<corners.length;i++){
+      if(corners[i].has(v)) return i+1;
+    }
+    return null;
   }
 
   function junkoBucket(n){
@@ -178,609 +224,500 @@
     return null;
   }
 
+  function dsKey(n){
+    // double street index per dozen: 1..3
+    if(isGreen(n)) return null;
+    const v = Number(n);
+    const d = v<=12?1:(v<=24?2:3);
+    const base = (d-1)*12;
+    const a = base+1, b = base+4, c = base+7;
+    let i = 2;
+    if(v>=a && v<=a+5) i=1;
+    else if(v>=b && v<=b+5) i=2;
+    else if(v>=c && v<=c+5) i=3;
+    return {d,i};
+  }
+
   function counts(vals){
     const c = {c1:0,c2:0,c3:0,d1:0,d2:0,d3:0,red:0,black:0,high:0,low:0,even:0,odd:0,gn:0,ho:0,lo:0,m:0,green:0};
-    vals.forEach(n=>{
+    for(const n of vals){
       if(isGreen(n)) c.green++;
-      const col = colOf(n); if(col===1)c.c1++; if(col===2)c.c2++; if(col===3)c.c3++;
-      const d = dozenOf(n); if(d===1)c.d1++; if(d===2)c.d2++; if(d===3)c.d3++;
-      if(isRed(n)) c.red++;
-      if(isBlack(n)) c.black++;
-      if(isHigh(n)) c.high++;
-      if(isLow(n)) c.low++;
-      if(isEven(n)) c.even++;
-      if(isOdd(n)) c.odd++;
-      const jb = junkoBucket(n);
-      if(jb==="GN") c.gn++;
-      if(jb==="HO") c.ho++;
-      if(jb==="LO") c.lo++;
-      if(jb==="M") c.m++;
-    });
+      const col=colOf(n); if(col===1)c.c1++; if(col===2)c.c2++; if(col===3)c.c3++;
+      const dz=dozenOf(n); if(dz===1)c.d1++; if(dz===2)c.d2++; if(dz===3)c.d3++;
+      if(!isGreen(n)){
+        if(RED.has(Number(n))) c.red++; else c.black++;
+        if(Number(n)>=19) c.high++; else c.low++;
+        if(Number(n)%2===0) c.even++; else c.odd++;
+      }
+      const jb=junkoBucket(n);
+      if(jb==="GN") c.gn++; if(jb==="HO") c.ho++; if(jb==="LO") c.lo++; if(jb==="M") c.m++;
+    }
     return c;
-  }
-  function dsCounts(vals){
-    const out = {d1:[0,0,0], d2:[0,0,0], d3:[0,0,0]};
-    vals.forEach(n=>{
-      const k = dsKey(n);
-      if(!k) return;
-      const arr = (k.d===1?out.d1:(k.d===2?out.d2:out.d3));
-      arr[k.i-1]+=1;
-    });
-    return out;
   }
 
   function repeatInfo(vals, lookback){
     const newest = vals[0];
-    if(vals.length<2) return {num:false, street:false, ds:false, why:"—"};
-    // number repeat
-    let numRep=false;
+    if(vals.length<2) return {num:false, street:false, corner:false, ds:false, text:[]};
+    let num=false, street=false, corner=false, ds=false;
+    const t=[];
     for(let i=1;i<Math.min(vals.length, lookback+1); i++){
-      if(vals[i]===newest){ numRep=true; break; }
+      if(vals[i]===newest){ num=true; t.push(`Number repeat: ${newest} within ${i} spin(s)`); break; }
     }
-    // street repeat
-    const s0 = streetId(newest);
-    let streetRep=false;
+    const s0=streetId(newest);
     if(s0){
       for(let i=1;i<Math.min(vals.length, lookback+1); i++){
-        const si = streetId(vals[i]);
-        if(si && si===s0){ streetRep=true; break; }
+        const si=streetId(vals[i]);
+        if(si && si===s0){ street=true; t.push(`Street repeat: S${s0} within ${i} spin(s)`); break; }
       }
     }
-    // double-street repeat
-    const d0 = dsKey(newest);
-    let dsRep=false;
+    const c0=cornerOf(newest);
+    if(c0){
+      for(let i=1;i<Math.min(vals.length, lookback+1); i++){
+        const ci=cornerOf(vals[i]);
+        if(ci && ci===c0){ corner=true; t.push(`Corner repeat: C${c0} within ${i} spin(s)`); break; }
+      }
+    }
+    const d0=dsKey(newest);
     if(d0){
       for(let i=1;i<Math.min(vals.length, lookback+1); i++){
-        const di = dsKey(vals[i]);
-        if(di && di.d===d0.d && di.i===d0.i){ dsRep=true; break; }
+        const di=dsKey(vals[i]);
+        if(di && di.d===d0.d && di.i===d0.i){ ds=true; t.push(`Double-street repeat: D${d0.d}-${d0.i} within ${i} spin(s)`); break; }
       }
     }
-    return {num:numRep, street:streetRep, ds:dsRep};
+    return {num,street,corner,ds,text:t};
   }
 
-  function pushBubble(text, me=false, html=false){
-    const chat = $("chat");
-    const row = document.createElement("div");
-    row.className = "row" + (me ? " me" : "");
-    const b = document.createElement("div");
-    b.className = "bubble";
-    if(html) b.innerHTML = text;
-    else b.textContent = text;
-    row.appendChild(b);
-    chat.appendChild(row);
-    // scroll
-    requestAnimationFrame(()=>{ window.scrollTo(0, document.body.scrollHeight); });
+  function tableState(vals){
+    if(vals.length<10) return "Warming up";
+    const cts = counts(vals.slice(0,15));
+    const rep = repeatInfo(vals, 5);
+    if(rep.num || rep.street || rep.corner || rep.ds) return "Repeat-heavy";
+    const colMax = Math.max(cts.c1,cts.c2,cts.c3);
+    const dozMax = Math.max(cts.d1,cts.d2,cts.d3);
+    const qMax = Math.max(cts.gn,cts.ho,cts.lo,cts.m);
+    if(colMax>=7 || dozMax>=7 || qMax>=6) return "Concentrated";
+    return "Flat / choppy";
   }
 
-  function save(){
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({casino, awaitingCasino, spins, sessionId, windowN}));
-    }catch(_){}
-  }
-  function load(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return;
-      const o = JSON.parse(raw);
-      casino = typeof o.casino==="string" ? o.casino : "";
-      awaitingCasino = !!o.awaitingCasino;
-      if(Array.isArray(o.spins)){
-        spins = o.spins.map(x => ({n:numToKey(x.n), t:Number(x.t)||now(), s:Number(x.s)||1})).filter(x=>x.n!==null);
-      }
-      sessionId = Number.isFinite(o.sessionId) ? Number(o.sessionId) : 1;
-      windowN = [10,15,20].includes(o.windowN) ? o.windowN : 15;
-    }catch(_){}
+  // ---------- Strategy models ----------
+  function strat6Diamonds(){
+    const corners = [
+      [1,2,4,5],
+      [7,8,10,11],
+      [13,14,16,17],
+      [19,20,22,23],
+      [25,26,28,29],
+      [31,32,34,35]
+    ];
+    const flatNums = corners.flat();
+    const howto =
+`6 Diamonds + 0/00 (COMP)
+Bet these 6 corners (1 unit each corner):
+- 1/2/4/5
+- 7/8/10/11
+- 13/14/16/17
+- 19/20/22/23
+- 25/26/28/29
+- 31/32/34/35
+Optional: add 0 and 00 as 1 unit each (table dependent).
+Progression: +1 unit to all corners after a loss; -1 after a win (min 1).
+Exit: stop on recovery or if you hit stop-loss rules.`;
+    return {name:"COMP — 6 Diamonds + 0/00", tag:"COMP", score:0, numbers:[...flatNums,0,"00"], howto};
   }
 
-  function windowValues(){ return spins.slice(0, windowN).map(x=>x.n); }
+  function stratJunkoHot(vals){
+    const w15 = vals.slice(0,15);
+    const cts = counts(w15);
+    const q = [
+      {k:"GN", n:cts.gn, nums:[..."00,0,1,2,9,10,13,14,27,28".split(",").map(x=>x==="00"?"00":Number(x))]},
+      {k:"HO", n:cts.ho, nums:[24,25,26,29,30,33,34,35,36]},
+      {k:"LO", n:cts.lo, nums:[3,4,8,11,12,15,16,22,23]},
+      {k:"M",  n:cts.m,  nums:[5,6,7,17,18,19,20,21,31,32]},
+    ];
+    q.sort((a,b)=>b.n-a.n);
+    const top=q[0];
+    const howto =
+`Junko Hot (Quadrant Momentum) (CASH)
+Bet the hottest quadrant (flat only):
+- ${top.k} numbers: ${top.nums.map(x=>String(x)).join(", ")}
+Units: 1 unit each number (5–10 numbers typical; start with the full list if unsure).
+Re-check every spin on last-15. Exit if the hottest drops below the trigger.`;
+    return {name:"CASH — Junko Hot (Quadrant Momentum)", tag:"CASH", score:0, numbers:top.nums, howto, extra:`${top.k} max=${top.n}/15`};
+  }
 
-  function toCsv(){
-    const c = (casino||"").replace(/"/g,'""');
-    const lines = ["number,casino,date,time,session_id"];
-    const arr = spins.slice().reverse();
+  function stratOppositeSegment(vals){
+    const w15 = vals.slice(0,15);
+    const c = {A:0,B:0,C:0,D:0};
+    for(const n of w15){
+      const k = (n==="00") ? "00" : Number(n);
+      if(SEG_A.has(k)) c.A++;
+      if(SEG_B.has(k)) c.B++;
+      if(SEG_C.has(k)) c.C++;
+      if(SEG_D.has(k)) c.D++;
+    }
+    // tie-break A→B→C→D
+    let hottest="A";
+    for(const k of SEG_ORDER){
+      if(c[k] > c[hottest]) hottest=k;
+    }
+    const opp = oppositeSeg(hottest);
+    const oppNums = Array.from(segSet(opp)).map(x=>x);
+    const howto =
+`Opposite-Segment Contrarian (Option 1) (CASH)
+Trigger: in last 15, a segment hits ≥ 6 (A→B→C→D tie-break).
+Then bet the OPPOSITE segment until first win.
+
+Current hottest: ${hottest} (${c[hottest]}/15) → bet ${opp}:
+Numbers: ${oppNums.map(x=>String(x)).join(", ")}
+
+Units: $1 per number.
+Escalation: +1 unit after 3 consecutive losing bet-spins.
+Session risk: cash out at +$100, stop loss at -$200.
+Guardrail: do not place any bet that could breach -$200 on a loss.`;
+    return {name:"CASH — Opposite Segment Contrarian", tag:"CASH", score:0, numbers:oppNums, howto, extra:`Hot ${hottest}=${c[hottest]}/15`};
+  }
+
+  function scoreAll(vals){
+    const plays = [];
+    const st = tableState(vals);
+    const rep = repeatInfo(vals, 5);
+    const cts15 = counts(vals.slice(0,15));
+    const qMax = Math.max(cts15.gn,cts15.ho,cts15.lo,cts15.m);
+
+    // base strategies
+    const s6 = strat6Diamonds();
+    const sj = stratJunkoHot(vals);
+    const so = stratOppositeSegment(vals);
+
+    // scoring heuristic (simple, deterministic)
+    // 6 Diamonds: better in repeat-heavy / noisy
+    let s6score = 70;
+    if(st==="Repeat-heavy") s6score = 88;
+    if(cts15.green>=3) s6score += 4;
+    if(rep.corner || rep.ds) s6score += 4;
+
+    // Junko Hot: better when qMax >= 6
+    let sjscore = 55;
+    if(qMax>=6) sjscore = 92;
+    else if(qMax===5) sjscore = 78;
+    else if(st==="Concentrated") sjscore = 70;
+
+    // Opposite Segment: only meaningful when hottest >=6
+    // estimate hottest count
+    const w15=vals.slice(0,15);
+    const segCounts = {A:0,B:0,C:0,D:0};
+    for(const n of w15){
+      const k = (n==="00") ? "00" : Number(n);
+      if(SEG_A.has(k)) segCounts.A++;
+      if(SEG_B.has(k)) segCounts.B++;
+      if(SEG_C.has(k)) segCounts.C++;
+      if(SEG_D.has(k)) segCounts.D++;
+    }
+    let hottest="A";
+    for(const k of SEG_ORDER){ if(segCounts[k] > segCounts[hottest]) hottest=k; }
+    const hotN = segCounts[hottest];
+    let soscore = 40;
+    if(hotN>=6) soscore = 86;
+    else if(hotN===5) soscore = 72;
+
+    s6.score = Math.max(1, Math.min(99, s6score));
+    sj.score = Math.max(1, Math.min(99, sjscore));
+    so.score = Math.max(1, Math.min(99, soscore));
+
+    plays.push(s6,sj,so);
+
+    plays.sort((a,b)=>b.score-a.score);
+    return {state:st, plays:plays.slice(0,3)};
+  }
+
+  function trendText(){
+    const vals = windowVals(15);
+    const cts = counts(vals);
+    const rep = repeatInfo(vals, 10);
+    const st = tableState(vals);
+    const cols = `${cts.c1}/${cts.c2}/${cts.c3}`;
+    const doz = `${cts.d1}/${cts.d2}/${cts.d3}`;
+    // DS summary (per dozen)
+    const ds = {d1:[0,0,0], d2:[0,0,0], d3:[0,0,0]};
+    for(const n of vals){
+      const k=dsKey(n);
+      if(!k) continue;
+      const arr = k.d===1?ds.d1:(k.d===2?ds.d2:ds.d3);
+      arr[k.i-1]+=1;
+    }
+    const dsLine = `D1 ${ds.d1.join("/")} | D2 ${ds.d2.join("/")} | D3 ${ds.d3.join("/")}`;
+    const last20 = state.spins.slice(0,20).map(x=>String(x.n)).join(", ");
+    const bullets = rep.text.length ? rep.text.map(x=>`• ${x}`).join("\n") : "• No repeat flags in lookback.";
+    return (
+`Trend snapshot (last 15)  [${st}]
+Columns: ${cols}
+Dozens:  ${doz}
+Double streets: ${dsLine}
+Red/Black: ${cts.red}/${cts.black}
+High/Low:  ${cts.high}/${cts.low}
+Even/Odd:  ${cts.even}/${cts.odd}
+Junko: GN ${cts.gn} | HO ${cts.ho} | LO ${cts.lo} | M ${cts.m}
+
+Repeat flags
+${bullets}
+
+Last 20: ${last20}`
+    );
+  }
+
+  function statusText(){
+    const vals = windowVals(15);
+    const scored = scoreAll(vals);
+    state.lastTop = scored.plays;
+    const lines = scored.plays.map((p,i)=> `${i+1}. ${p.name}  (${p.tag} • ${p.score})`).join("\n");
+    return `Top strategies (name + score)\n${lines}`;
+  }
+
+  function wheelText(){
+    const lastN = state.spins.slice(0,20).map(x=>x.n);
+    const counts = {};
+    for(const n of lastN){
+      const k = String(n);
+      counts[k] = (counts[k]||0)+1;
+    }
+    // order by American wheel order
+    const WHEEL = [0,28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,"00",27,10,25,29,12,8,19,31,18,6,21,33,16,4,23,35,14,2];
+    let out = "Wheel histogram (last 20)\n";
+    const max = Math.max(1, ...Object.values(counts));
+    for(const n of WHEEL){
+      const k = String(n);
+      const c = counts[k]||0;
+      const bars = "█".repeat(Math.round((c/max)*12));
+      out += `${k.padStart(2," ")}: ${String(c).padStart(2," ")} ${bars}\n`;
+    }
+    return out.trim();
+  }
+
+  function csv(){
+    const lines = ["number,casino,date,time"];
+    const casino = (state.casino||"").replace(/"/g,'""');
+    const arr = state.spins.slice().reverse();
     for(const x of arr){
       const d = new Date(x.t);
-      const yyyy = String(d.getFullYear());
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      const dd = String(d.getDate()).padStart(2,'0');
-      const hh = String(d.getHours()).padStart(2,'0');
-      const mi = String(d.getMinutes()).padStart(2,'0');
-      const ss = String(d.getSeconds()).padStart(2,'0');
-      const n = (x.n==="00")?"00":String(x.n);
-      lines.push(`${n},"${c}",${yyyy}-${mm}-${dd},${hh}:${mi}:${ss},${x.s}`);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      const ss = String(d.getSeconds()).padStart(2,"0");
+      lines.push(`${x.n},"${casino}",${yyyy}-${mm}-${dd},${hh}:${mi}:${ss}`);
     }
     return lines.join("\n");
   }
 
-  async function copyText(t){
-    try{
-      await navigator.clipboard.writeText(t);
-      return true;
-    }catch(_){
-      return false;
-    }
-  }
-
-  function parseCommaList(s){
-    const parts = String(s||"").split(",").map(x=>x.trim()).filter(Boolean);
-    const out = [];
-    for(const p of parts){
-      const k = numToKey(p);
-      if(k===null) return null;
-      out.push(k);
-    }
-    return out;
-  }
-
-  // ---- Strategy definitions (HOW TO only in explain) ----
-  const HOWTO = {
-  "COMP — 6 Diamonds + 0/00": `How to play (COMP)
-• Bet the 6 fixed corners (1 unit each corner) PLUS straight-up 0 and 00 (1 unit each).
-• After a losing spin: +1 unit to ALL selected bets (cap progression as you prefer).
-• After a winning spin: −1 unit to ALL selected bets (minimum 1 unit).
-• Reset to base after a meaningful recovery / when near session high.`,
-
-  "CASH — Junko Hot (Quadrant Momentum)": `How to play (CASH)
-• Bet a small basket (typically 5–7 numbers) inside the hottest Junko quadrant.
-• Flat bet is preferred; keep a short leash (10–15 spins) and re-check often.
-• If the hottest quadrant changes, switch to the new hottest quadrant (or stop if unclear).`,
-
-  "CASH — Gold Mine (Even-Money Compression)": `How to play (CASH)
-• Bet ONE even‑money side (Red/Black OR High/Low OR Even/Odd) that is currently most concentrated.
-• Flat bet only. Re-check every spin (or every few spins) using the last-15 window.
-• Stop if the edge disappears or you hit your session stops.`,
-
-  "COMP — Minimum Bet Placeholder": `How to play (COMP)
-• Minimum bet / observe mode. Keep logging spins until the table becomes clearer.`,
-
-  "CASH — Opposite-Segment Contrarian (Option 1)": `How to play (CASH)
-• When a segment becomes hot in the last-15 window, bet the OPPOSITE segment until you hit once.
-• Base unit = $1 per number.
-• Escalate: +1 unit after 3 consecutive losing bet-spins.
-• Session stops: cash-out +$100, stop-loss −$200 (guardrail: do not place any bet that could breach −$200 on a loss).`
-};
-
-  function scoreStrategies(vals){
-    const plays = [];
-    const add = (name, score) => plays.push({name, score});
-
-    if(vals.length < 10){
-      add("COMP — 6 Diamonds + 0/00", 70);
-      return {plays: plays.sort((a,b)=>b.score-a.score).slice(0,3), primary: plays[0]};
-    }
-
-    // Junko heat
-    const w15 = vals.slice(0,15);
-    const c15 = counts(w15);
-    const qMax = Math.max(c15.gn, c15.ho, c15.lo, c15.m);
-    if(qMax >= 6) add("CASH — Junko Hot (Quadrant Momentum)", 92);
-    else if(qMax >= 5) add("CASH — Junko Hot (Quadrant Momentum)", 80);
-
-    // Opposite segment contrarian (activation threshold 6/15 in hottest segment with A→B→C→D tie-break)
-    const segCounts = {A:0,B:0,C:0,D:0};
-    for(const n of w15){
-      const s = segOf(n);
-      if(s) segCounts[s] += 1;
-    }
-    let hottest = "A";
-    for(const s of TIE_ORDER){
-      if(segCounts[s] > segCounts[hottest]) hottest = s;
-    }
-    if(segCounts[hottest] >= 6) add("CASH — Opposite Segment (Contrarian)", 88);
-
-    // Repeat / choppy: comp coverage as fallback
-    const rep = repeatInfo(vals, 5);
-    if(rep.num || rep.street || rep.ds) add("COMP — 6 Diamonds + 0/00", 86);
-    else add("COMP — 6 Diamonds + 0/00", 78);
-
-    // A light even-money placeholder when nothing else is screaming
-    add("CASH — Gold Mine (Even-Money Compression)", 72);
-
-    plays.sort((a,b)=>b.score-a.score);
-    const top = plays.slice(0,3);
-    return {plays: top, primary: top[0]};
-  }
-
-  function buildTrendHTML(vals){
-    const recent = vals.slice(0,15);
-    const c = counts(recent);
-    const ds = dsCounts(recent);
-
-    const rep = repeatInfo(vals, 5);
-    const repLine = `Repeats (last 5): number ${rep.num?"YES":"no"} • street ${rep.street?"YES":"no"} • DS ${rep.ds?"YES":"no"}`;
-
-    return `
-      <div class="hdr"><span class="b">Trend snapshot</span> <span class="pill">last 15</span></div>
-      <div class="small muted">${repLine}</div>
-      <div class="kv">
-        <div class="card"><div class="k">Columns (C1/C2/C3)</div><div class="v mono">${c.c1} / ${c.c2} / ${c.c3}</div></div>
-        <div class="card"><div class="k">Dozens (D1/D2/D3)</div><div class="v mono">${c.d1} / ${c.d2} / ${c.d3}</div></div>
-        <div class="card"><div class="k">Double Streets (per dozen)</div><div class="v mono">D1 ${ds.d1[0]}/${ds.d1[1]}/${ds.d1[2]} | D2 ${ds.d2[0]}/${ds.d2[1]}/${ds.d2[2]} | D3 ${ds.d3[0]}/${ds.d3[1]}/${ds.d3[2]}</div></div>
-        <div class="card"><div class="k">Red / Black</div><div class="v mono">${c.red} / ${c.black}</div></div>
-        <div class="card"><div class="k">High / Low</div><div class="v mono">${c.high} / ${c.low}</div></div>
-        <div class="card"><div class="k">Even / Odd</div><div class="v mono">${c.even} / ${c.odd}</div></div>
-        <div class="card" style="grid-column:1/-1"><div class="k">Junko quadrants</div><div class="v mono">GN ${c.gn} | HO ${c.ho} | LO ${c.lo} | M ${c.m}</div></div>
-      </div>
-    `;
-  }
-
-  function wheelHistogramText(lastN=20){
-    const WHEEL = [0,28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,"00",27,10,25,29,12,8,19,31,18,6,21,33,16,4,23,35,14,2];
-    const slice = spins.slice(0,lastN).map(x=>x.n);
-    const cts = {};
-    for(const n of slice){
-      const k = (n==="00")?"00":String(n);
-      cts[k] = (cts[k]||0)+1;
-    }
-    const maxC = Math.max(1, ...WHEEL.map(n=>cts[(n==="00")?"00":String(n)]||0));
-    const bar = (k)=>"█".repeat(Math.round((k/maxC)*8));
-    let out = `<div class="hdr"><span class="b">Wheel</span> <span class="pill">last ${lastN}</span></div>`;
-    out += `<div class="small muted">Hit histogram by pocket (American wheel order)</div>`;
-    out += `<div class="small mono" style="white-space:pre-wrap;line-height:1.35;margin-top:8px">`;
-    for(const n of WHEEL){
-      const key=(n==="00")?"00":String(n);
-      const c=cts[key]||0;
-      if(c>0){
-        out += `${key.padStart(2," ")}: ${String(c).padStart(2," ")}  ${bar(c)}\n`;
-      }
-    }
-    out += `</div>`;
-    return out;
-  }
-
-  function statusHTML(vals){
-    const scored = scoreStrategies(vals);
-    const top = scored.plays.map((p,i)=>`${i+1}. ${p.name}  <span class="pill">${p.score}</span>`).join("<br/>");
-    return `
-      <div class="hdr"><span class="b">Status</span> <span class="pill">${casino?casino:"no casino"}</span></div>
-      <div class="small muted">Window: last ${windowN} • Spins logged: ${spins.length} • Session: ${sessionId}</div>
-      <div class="small" style="margin-top:8px"><span class="b">Top 3</span><br/>${top}</div>
-      <div class="small muted" style="margin-top:8px">Tip: text <span class="mono">trend</span> for the stat grid. Text <span class="mono">explain</span> (or <span class="mono">explain 2</span>) for how to play.</div>
-    `;
-  }
-
   function helpText(){
-    return `Help (commands)
-- status : top 3 strategies (name + score)
-- trend  : stat grid (columns/dozens/DS/RB/HL/EO/Junko + repeat flags)
-- wheel  : wheel histogram (last 20)
-- explain : how to play the #1 strategy shown in status
-- explain 2 : how to play the #2 strategy
-- export : copy CSV (works offline)
-- offline : offline reminders + backup tips
-- clear  : wipe spins + reset session
+    return (
+`Help — commands
+status      → top strategies (name + score)
+trend       → compact stats + repeats + last20 list
+explain     → how to play + numbers for #1 strategy
+explain 2   → how to play + numbers for #2 strategy
+wheel       → wheel-order histogram for last 20
+export      → shows CSV (copy manually)
+offline     → offline reminders & backup tips
+clear       → wipe local history
 
-Input
-- Send a single spin: 17 or 00
-- Send a short list: 10,12,4
-- Paste full history once: 0,00,34,23,45,... (comma-separated)
+Input formats
+- Single spin: 17
+- Comma list: 17,0,00,34
+- First load: paste a long history list, then send.
 
-Casino prompt
-- After your first pasted history, the app asks which casino you're at.
-  Reply with the name (e.g., "Caesars" or "Harrah's Joliet").`;
+Casino
+- After first history, set casino with: casino <name>
+  example: casino Caesars Joliet`
+    );
   }
 
   function offlineText(){
-    return `Offline reminders (cruise / airplane mode)
-- This runs fully offline after the page loads once.
-- Spins and casino name are saved on-device (localStorage).
-- Export: text "export" to copy CSV to clipboard (no internet needed).
-- Backup tip: after exporting, paste the CSV into Notes or email draft so you have a second copy.
-- Import later: you can paste exported CSV into a desktop tool, or re-enter history as a comma list.`;
+    return (
+`Offline reminders (cruise/airplane mode)
+• This page runs fully offline once loaded (no server calls).
+• Spins + casino name are saved on-device (localStorage).
+• Export: text "export" to display CSV; copy it somewhere safe (Notes/email to yourself later).
+• If you clear Safari/Chrome website data, localStorage can be wiped—export before doing that.
+• If you open the same URL in a different browser/device, it will not have your local data (export/import is your bridge).`
+    );
   }
 
-  function clearAll(){
-    spins = [];
-    sessionId = 1;
-    awaitingCasino = false;
-    casino = "";
+  function explainNth(n){
+    if(!state.lastTop || state.lastTop.length<1){
+      // force compute
+      statusText();
+    }
+    const p = state.lastTop[n-1];
+    if(!p) return "No strategy available yet. Add more spins, then text: status";
+    return p.howto;
+  }
+
+  // ---------- Input handling ----------
+  function addSpins(list){
+    const t = Date.now();
+    for(const n of list){
+      state.spins.unshift({n:n, t:t});
+    }
+    if(state.spins.length>8000) state.spins = state.spins.slice(0,8000);
     save();
-    pushBubble("Cleared. Paste history or send spins to start.", false);
   }
 
-  function addSpin(n){
-    spins.unshift({n, t: now(), s: sessionId});
-    if(spins.length > 5000) spins = spins.slice(0,5000);
-    save();
-  }
-
-  function ingestList(list, isFirstHistory){
-    // treat list as chronological if it looks like a paste (more than 6 numbers)
-    const isChrono = list.length >= 7;
-    const arr = isChrono ? list.slice() : list.slice(); // already given order; we will add sequential with increasing time
-    // Append to history chronologically: oldest first
-    const baseT = now() - arr.length*250;
-    for(let i=0;i<arr.length;i++){
-      const n = arr[i];
-      spins.unshift({n, t: baseT + i*250, s: sessionId}); // unshift but time increasing so sorting later
-    }
-    // Normalize: sort newest-first by time
-    spins.sort((a,b)=>b.t-a.t);
-    if(spins.length > 5000) spins = spins.slice(0,5000);
-    save();
-
-    if(isFirstHistory){
-      awaitingCasino = true;
-      save();
-      pushBubble("Got it. Which casino are you at? (reply with a short name)", false);
-    } else {
-      pushBubble(statusHTML(windowValues()), false, true);
-    }
-  }
-
-  function formatNums(arr){
-  return arr.map(x => (x==="00" ? "00" : String(x))).join(", ");
-}
-
-function fixed6DiamondsNums(){
-  return {
-    corners: [
-      [1,2,3,5],
-      [7,8,9,11],
-      [13,14,15,17],
-      [19,20,21,23],
-      [25,26,27,29],
-      [31,32,33,35],
-    ],
-    greens: [0,"00"]
-  };
-}
-
-function hottestJunkoBucket(vals){
-  const w = vals.slice(0,15);
-  const c = {GN:0, HO:0, LO:0, M:0};
-  for(const n of w){
-    const b = junkoBucket(n);
-    if(b) c[b] += 1;
-  }
-  const order = ["GN","HO","LO","M"];
-  let best = order[0];
-  for(const k of order){ if(c[k] > c[best]) best = k; }
-  return {bucket: best, counts: c};
-}
-
-function junkoBucketNumbers(bucket){
-  const map = {
-    GN: ["00",0,1,2,9,10,13,14,27,28],
-    HO: [24,25,26,29,30,33,34,35,36],
-    LO: [3,4,8,11,12,15,16,22,23],
-    M:  [5,6,7,17,18,19,20,21,31,32],
-  };
-  return map[bucket] || [];
-}
-
-function topNumbersInSet(vals, setArr, topK=5){
-  const freq = new Map();
-  const allowed = new Set(setArr.map(x => (x==="00" ? "00" : String(x))));
-  for(const n of vals.slice(0,15)){
-    const k = (n==="00") ? "00" : String(n);
-    if(allowed.has(k)) freq.set(k, (freq.get(k)||0)+1);
-  }
-  const sorted = [...freq.entries()].sort((a,b)=>b[1]-a[1]);
-  const pick = [];
-  for(const [k] of sorted){
-    pick.push(k==="00" ? "00" : Number(k));
-    if(pick.length>=topK) break;
-  }
-  if(pick.length < topK){
-    for(const x of setArr){
-      if(pick.some(p=>String(p)===String(x))) continue;
-      pick.push(x);
-      if(pick.length>=topK) break;
-    }
-  }
-  return pick;
-}
-
-function goldMineSide(vals){
-  const w = vals.slice(0,15);
-  let red=0, black=0, high=0, low=0, even=0, odd=0;
-  for(const n of w){
-    if(isGreen(n)) continue;
-    if(isRed(n)) red++; if(isBlack(n)) black++;
-    if(isHigh(n)) high++; if(isLow(n)) low++;
-    if(isEven(n)) even++; if(isOdd(n)) odd++;
-  }
-  const options = [
-    {label:"Red", a:red, b:black},
-    {label:"Black", a:black, b:red},
-    {label:"High (19–36)", a:high, b:low},
-    {label:"Low (1–18)", a:low, b:high},
-    {label:"Even", a:even, b:odd},
-    {label:"Odd", a:odd, b:even},
-  ];
-  options.sort((x,y)=> (y.a - y.b) - (x.a - x.b));
-  return {side: options[0].label, margin: options[0].a - options[0].b};
-}
-
-function oppositeSegmentTargets(vals){
-  const w = vals.slice(0,15);
-  const c = {A:0,B:0,C:0,D:0};
-  for(const n of w){
-    const seg = segmentOf(n);
-    if(seg) c[seg] += 1;
-  }
-  const order = ["A","B","C","D"];
-  let hottest = order[0];
-  for(const k of order){ if(c[k] > c[hottest]) hottest = k; }
-  const betSeg = oppositeOf(hottest);
-  return {hottest, betSeg, counts:c, nums: segSet[betSeg]};
-}
-
-function explainHTML(name, vals){
-  const key = (name||"").trim();
-
-  if(key === "COMP — 6 Diamonds + 0/00"){
-    const d = fixed6DiamondsNums();
-    const cornerLines = d.corners.map(g => `• Corner: ${formatNums(g)}`).join("<br>");
-    return `<b>${key}</b><br><span class="muted">Numbers to bet</span><br>${cornerLines}<br>• 0 and 00 (straight)<br><div style="height:1px;background:rgba(255,255,255,.10);margin:10px 0"></div><span class="muted">How to play</span><br>${HOWTO[key].replace(/\n/g,"<br>")}`;
-  }
-
-  if(key === "CASH — Junko Hot (Quadrant Momentum)"){
-    const hot = hottestJunkoBucket(vals);
-    const nums = junkoBucketNumbers(hot.bucket);
-    const suggested = topNumbersInSet(vals, nums, 5);
-    return `<b>${key}</b><br><span class="muted">Numbers to bet</span><br>• Hottest quadrant now: <b>${hot.bucket}</b><br>• Quadrant set: ${formatNums(nums)}<br>• Suggested 5 now: <b>${formatNums(suggested)}</b><br><div style="height:1px;background:rgba(255,255,255,.10);margin:10px 0"></div><span class="muted">How to play</span><br>${HOWTO[key].replace(/\n/g,"<br>")}`;
-  }
-
-  if(key === "CASH — Gold Mine (Even-Money Compression)"){
-    const best = goldMineSide(vals);
-    return `<b>${key}</b><br><span class="muted">Bet to place</span><br>• <b>${best.side}</b> (even-money)<br><div style="height:1px;background:rgba(255,255,255,.10);margin:10px 0"></div><span class="muted">How to play</span><br>${HOWTO[key].replace(/\n/g,"<br>")}`;
-  }
-
-  if(key === "CASH — Opposite-Segment Contrarian (Option 1)"){
-    const o = oppositeSegmentTargets(vals);
-    const nums = o.nums.map(x => (x===99 ? "00" : x));
-    return `<b>${key}</b><br><span class="muted">Numbers to bet</span><br>• Opposite of hottest segment (<b>${o.hottest}</b> → <b>${o.betSeg}</b>)<br>• Bet segment numbers: <b>${formatNums(nums)}</b><br><div style="height:1px;background:rgba(255,255,255,.10);margin:10px 0"></div><span class="muted">How to play</span><br>${HOWTO[key].replace(/\n/g,"<br>")}`;
-  }
-
-  const how = HOWTO[key] || HOWTO["COMP — Minimum Bet Placeholder"] || "—";
-  return `<b>${key}</b><br><span class="muted">How to play</span><br>${String(how).replace(/\n/g,"<br>")}`;
-}
-
-function explainRank(rank){
-  const vals = windowValues();
-  const scored = scoreStrategies(vals);
-  const picks = scored.top;
-  const idx = Math.max(0, Math.min(picks.length-1, (rank||1)-1));
-  const p = picks[idx];
-  if(!p){
-    pushBubble("No strategy available yet. Add some spins first.", false);
-    return;
-  }
-  pushBubble(explainHTML(p.name, vals), false, true);
-}
-    const t = HOWTO[p.name] || ("No how-to available for: " + p.name);
-    pushBubble(t, false);
-  }
-
-  function handleCommand(cmdRaw){
-    const cmd = String(cmdRaw||"").trim().toLowerCase();
-
-    if(cmd === "help"){
-      pushBubble(helpText(), false);
-      return true;
-    }
-    if(cmd === "offline"){
-      pushBubble(offlineText(), false);
-      return true;
-    }
-    if(cmd === "clear"){
-      clearAll();
-      return true;
-    }
-    if(cmd === "status"){
-      pushBubble(statusHTML(windowValues()), false, true);
-      return true;
-    }
-    if(cmd === "trend"){
-      pushBubble(buildTrendHTML(windowValues()), false, true);
-      return true;
-    }
-    if(cmd === "wheel"){
-      pushBubble(wheelHistogramText(20), false, true);
-      return true;
-    }
-    if(cmd === "export"){
-      const csv = toCsv();
-      copyText(csv).then(ok=>{
-        if(ok) pushBubble("Export copied (CSV). Paste into Notes/Email for backup.", false);
-        else pushBubble("Clipboard blocked. Copy this CSV manually:\n\n" + csv, false);
-      });
-      return true;
-    }
-    if(cmd === "explain"){
-      explainRank(1);
-      return true;
-    }
-    if(cmd === "explain 2" || cmd === "explain2"){
-      explainRank(2);
-      return true;
-    }
-    return false;
-  }
-
-  function onSend(){
-    const raw = ($("msg").value||"").trim();
+  function handleUser(text){
+    const raw = String(text||"").trim();
     if(!raw) return;
 
-    pushBubble(raw, true);
-    $("msg").value = "";
+    pushBubble(escapeHTML(raw), "out");
 
-    // If we're awaiting casino name, treat anything that isn't a command as casino
-    if(awaitingCasino){
-      if(handleCommand(raw)) return;
-      casino = raw;
-      awaitingCasino = false;
+    const lower = raw.toLowerCase();
+
+    // casino
+    if(lower.startsWith("casino ")){
+      state.casino = raw.slice(7).trim();
       save();
-      pushBubble("Saved casino: " + casino + ". Text status or trend when ready.", false);
+      pushBubble(`Casino set: <b>${escapeHTML(state.casino||"")}</b>`, "in", ["saved"]);
       return;
     }
 
-    // Commands
-    if(handleCommand(raw)) return;
-
-    // Single number?
-    const single = numToKey(raw);
-    if(single !== null && String(raw).indexOf(",") === -1){
-      addSpin(single);
-      pushBubble(statusHTML(windowValues()), false, true);
+    // commands
+    if(lower==="help"){
+      pushBubble(escapeHTML(helpText()), "in", ["help"]);
       return;
     }
-
-    // Comma list?
-    if(raw.includes(",")){
-      const list = parseCommaList(raw);
-      if(!list){
-        pushBubble("Unrecognized. Send numbers like 17, 00, or a comma list like 0,00,34,23.", false);
+    if(lower==="offline"){
+      pushBubble(escapeHTML(offlineText()), "in", ["offline"]);
+      return;
+    }
+    if(lower==="clear"){
+      state.spins = [];
+      state.casino = "";
+      save();
+      pushBubble("Cleared. Paste history to start again.", "in", ["cleared"]);
+      return;
+    }
+    if(lower==="status"){
+      if(state.spins.length<10){
+        pushBubble("Need at least ~10 spins. Paste history as comma list first.", "in", ["status"]);
         return;
       }
-      const isFirstHistory = spins.length === 0;
-      ingestList(list, isFirstHistory);
+      pushBubble(escapeHTML(statusText()), "in", ["status"]);
+      return;
+    }
+    if(lower==="trend"){
+      if(state.spins.length<10){
+        pushBubble("Need at least ~10 spins. Paste history first.", "in", ["trend"]);
+        return;
+      }
+      pushBubble(escapeHTML(trendText()), "in", ["trend"]);
+      return;
+    }
+    if(lower==="wheel"){
+      if(state.spins.length<1){
+        pushBubble("No spins yet.", "in", ["wheel"]);
+        return;
+      }
+      pushBubble(escapeHTML(wheelText()), "in", ["wheel"]);
+      return;
+    }
+    if(lower==="export"){
+      if(state.spins.length<1){
+        pushBubble("No spins to export.", "in", ["export"]);
+        return;
+      }
+      pushBubble(escapeHTML(csv()), "in", ["export CSV"]);
+      return;
+    }
+    if(lower==="explain"){
+      if(state.spins.length<10){
+        pushBubble("Need some spins first. Paste history, then text: status", "in", ["explain"]);
+        return;
+      }
+      pushBubble(escapeHTML(explainNth(1)), "in", ["explain #1"]);
+      return;
+    }
+    if(lower==="explain 2"){
+      if(state.spins.length<10){
+        pushBubble("Need some spins first. Paste history, then text: status", "in", ["explain 2"]);
+        return;
+      }
+      pushBubble(escapeHTML(explainNth(2)), "in", ["explain #2"]);
       return;
     }
 
-    pushBubble("Unrecognized. Text help for commands, or send a spin like 17 / 00.", false);
-  }
-
-  function seedIntro(){
-    if(spins.length === 0){
-      pushBubble("Paste history (comma-separated). After that, text single spins or commands.", false);
-    } else {
-      pushBubble(statusHTML(windowValues()), false, true);
-      if(awaitingCasino){
-        pushBubble("Which casino are you at? (reply with a short name)", false);
+    // numbers (single or list)
+    const list = parseCommaList(raw);
+    if(list.length){
+      const isFirstLoad = state.spins.length===0 && list.length>=10;
+      addSpins(list);
+      if(isFirstLoad && !state.casino){
+        pushBubble("History saved. What casino are you at? Reply: casino <name>", "in", ["casino?"]);
+      } else {
+        // after any numbers, show compact status automatically
+        if(state.spins.length>=10){
+          pushBubble(escapeHTML(statusText()), "in", ["status"]);
+        } else {
+          pushBubble(`Saved ${list.length} spin(s).`, "in", ["saved"]);
+        }
       }
+      return;
+    }
+
+    pushBubble("Unrecognized. Send a number (17) or comma list (0,00,34,23) or text: help", "in", ["unrecognized"]);
+  }
+
+  function boot(){
+    load();
+
+    // welcome
+    pushBubble("Ready. Paste history as comma-separated numbers, then Send.", "in", ["ready"]);
+
+    // show last error (if any) — helpful for debugging white screen
+    try{
+      const lastErr = localStorage.getItem(ERRKEY);
+      if(lastErr){
+        pushBubble("Last load error detected (cleared now):\n" + escapeHTML(lastErr), "in", ["debug"]);
+        localStorage.removeItem(ERRKEY);
+      }
+    }catch(_){}
+
+    // wire events (multiple paths to ensure iOS reliability)
+    const form = $("composer");
+    const input = $("msg");
+    const send = $("send");
+
+    const submit = (e)=>{
+      if(e) { e.preventDefault(); e.stopPropagation(); }
+      const txt = input.value;
+      input.value = "";
+      handleUser(txt);
+      input.focus();
+      return false;
+    };
+
+    // Submit paths
+    form.addEventListener("submit", submit, {passive:false});
+    send.addEventListener("click", submit, {passive:false});
+    send.addEventListener("touchend", (e)=>{ e.preventDefault(); submit(e); }, {passive:false});
+
+    // Enter key
+    input.addEventListener("keydown", (e)=>{
+      if(e.key==="Enter"){
+        e.preventDefault();
+        submit(e);
+      }
+    });
+
+    // If user already had spins stored, show a small reminder
+    if(state.spins.length){
+      pushBubble(`Loaded ${state.spins.length} saved spins. Text: status or trend`, "in", ["loaded"]);
     }
   }
 
-  // init
-  load();
-  $("buildLine").textContent = "Texting view • STEALTH TEXT MODE — " + VERSION + " (Opposite Segment strategy added)";
-  // Send wiring (iOS Safari friendly): submit, click, and touch
-  const form = document.getElementById("composerForm");
-  if(form){
-    form.addEventListener("submit", (e)=>{ e.preventDefault(); onSend(); });
-  }
-  const sendBtn = $("send");
-  if(sendBtn){
-    sendBtn.addEventListener("click", (e)=>{ e.preventDefault(); onSend(); });
-    sendBtn.addEventListener("touchend", (e)=>{ e.preventDefault(); onSend(); }, {passive:false});
-  // Form submit (iOS "Go/Done" can trigger submit) — stop page refresh and treat it as Send
-  try{
-    const form = document.getElementById("composerForm");
-    if(form){
-      form.addEventListener("submit", (e)=>{ e.preventDefault(); onSend(e); });
-    }
-  }catch(_){}
+  // boot safely
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 
-  }
-  const msgIn = $("msg");
-  if(msgIn){
-    msgIn.addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); onSend(); } });
-  }
-
-  seedIntro();
 })();
 </script>
 </body>
