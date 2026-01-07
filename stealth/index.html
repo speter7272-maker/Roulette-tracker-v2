@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>STEALTH TEXT MODE v1.4 • Send stable</title>
+<title>Stealth Roulette Tracker • v1.6 • Build: 2026-01-06 • CASH PRIORITY</title>
 <style>
 :root{color-scheme:dark;--bg:#070b14;--panel:#0b1220;--bubbleIn:#121b2f;--bubbleOut:#17325e;--txt:#e5e7eb;--muted:#94a3b8;--border:rgba(255,255,255,.10);--pill:rgba(255,255,255,.08)}
 *{box-sizing:border-box}
@@ -325,7 +325,254 @@ Exit: stop on recovery or if you hit stop-loss rules.`;
     return {name:"COMP — 6 Diamonds + 0/00", tag:"COMP", score:0, numbers:[...flatNums,0,"00"], howto};
   }
 
-  function stratJunkoHot(vals){
+  
+  function stratMoonDance(vals){
+    // Needs 15 prior spins; compute 2 least-hit streets per dozen (4 streets per dozen).
+    if(vals.length < 15) return null;
+    const last15 = vals.slice(0,15);
+    // street id 1..12
+    const c = {d1:[0,0,0,0], d2:[0,0,0,0], d3:[0,0,0,0]};
+    last15.forEach(n=>{
+      if(n===0 || n==="00") return;
+      const v = Number(n);
+      if(!(v>=1 && v<=36)) return;
+      const s = Math.floor((v-1)/3)+1; // 1..12
+      const dozen = (s<=4)?1:((s<=8)?2:3);
+      const within = ((s-1)%4)+1; // 1..4
+      const arr = dozen===1?c.d1:(dozen===2?c.d2:c.d3);
+      arr[within-1] += 1;
+    });
+    function pick2(arr){
+      const items = arr.map((hits,i)=>({hits, idx:i+1}));
+      items.sort((a,b)=>(a.hits-b.hits)||(a.idx-b.idx));
+      return [items[0].idx, items[1].idx];
+    }
+    const p1 = pick2(c.d1), p2 = pick2(c.d2), p3 = pick2(c.d3);
+    function numsFor(dozen, within){
+      const base = (dozen-1)*12;
+      const start = base + (within-1)*3 + 1;
+      return [start,start+1,start+2];
+    }
+    const nums = [];
+    p1.forEach(w=>nums.push(...numsFor(1,w)));
+    p2.forEach(w=>nums.push(...numsFor(2,w)));
+    p3.forEach(w=>nums.push(...numsFor(3,w)));
+    const uniq = Array.from(new Set(nums)).sort((a,b)=>a-b);
+
+    // scoring: more depleted streets => higher
+    const lows = [c.d1[p1[0]-1],c.d1[p1[1]-1],c.d2[p2[0]-1],c.d2[p2[1]-1],c.d3[p3[0]-1],c.d3[p3[1]-1]];
+    const zeros = lows.filter(x=>x===0).length;
+    const avg = lows.reduce((a,b)=>a+b,0)/lows.length;
+    let score = 78 + zeros*5 + Math.max(0,(2-avg))*8; // heuristic
+    score = Math.max(0, Math.min(99, Math.round(score)));
+
+    return {
+      name: "CASH — Moon Dance 2S/Dozen (Junko Base)",
+      score,
+      why: `Least-hit streets per dozen (18 numbers).`,
+      howto:
+`MOON DANCE 2S/DOZEN — JUNKO BASE (CASH)
+
+Numbers to bet (18)
+${uniq.join(", ")}
+
+Entry
+- Wait until you have 15 prior spins logged.
+
+Bet / Progression
+- Bet $b on EACH of the 18 numbers (straight-up).
+- Start b=1.
+- If spin hits any of the 18 OR hits 0/00: treat as WIN → reset b=1 and recompute streets next cycle.
+- If spin misses all 18 AND misses 0/00: double b.
+
+0/00 bailout hedge (only when b>=8)
+- Add $2 on 0 and $2 on 00.
+
+Exits / Guardrail
+- Cashout +$100 (after spin)
+- Stop-loss -$200
+- Do NOT place a bet if worst-case loss would breach -$200.`,
+      tag:"CASH",
+      numbers: uniq
+    };
+  }
+
+  function stratTrinityJunkoV2(vals){
+    if(vals.length < 15) return null;
+    const last15 = vals.slice(0,15);
+    const dsCold = last15.filter(n=> (n!==0 && n!=="00" && Number(n)>=1 && Number(n)<=12)).length; // DS 1-12 proxy
+    const corners = [13,17,14,18,19,23,20,24,25,29,26,30,31,35,32,36];
+    const cornerHits = last15.filter(n=> n!=="00" && n!==0 && corners.includes(Number(n))).length;
+    let score = 74 + Math.max(0, cornerHits-6)*2 + Math.max(0, 4-dsCold)*3;
+    score = Math.max(0, Math.min(98, Math.round(score)));
+
+    return {
+      name: "CASH — Trinity–Junko v2",
+      score,
+      why: "Corner + DS cadence.",
+      howto:
+`TRINITY–JUNKO v2 (CASH)
+
+Double Streets
+- Bet DS 1–6 and 7–12 (two 6-lines).
+
+Corners (8)
+- 13/17, 14/18, 19/23, 20/24, 25/29, 26/30, 31/35, 32/36
+Numbers (corner coverage)
+13,14,17,18,19,20,23,24,25,26,29,30,31,32,35,36
+
+Units
+- ds_unit starts 1; +1 each spin with NO DS hit; cap 5.
+- If ANY DS hits (1–12), remove BOTH DS until next reset; set ds_unit=1.
+- corner_unit doubles every 3 spins (win or loss); cap $16.
+- Remove any corner(s) that hit (multiple can be removed).
+
+Resets
+- Reset DS + corners + units when session P/L crosses +$15 milestones (15,30,45,60,75,90) OR when ≤2 corners remain.
+
+Exits / Guardrail
+- Cashout +$90 (after spin)
+- Stop-loss -$200
+- Do NOT place a bet if worst-case loss would breach -$200.`,
+      tag:"CASH",
+      numbers: corners
+    };
+  }
+
+  function stratCornersDSFollowLeader(vals){
+    if(vals.length < 3) return null;
+    // map number to DS label
+    function dsLabel(n){
+      if(n===0 || n==="00") return null;
+      const v = Number(n);
+      if(!(v>=1 && v<=36)) return null;
+      const street = Math.floor((v-1)/3)+1; //1..12
+      const startStreet = (street%2===1)?street:(street-1);
+      const a = (startStreet-1)*3 + 1;
+      const b = a+5;
+      return `${a}-${b}`;
+    }
+    const dsAll = ["1-6","7-12","13-18","19-24","25-30","31-36"];
+    const d0 = dsLabel(vals[0]);
+    const d1 = dsLabel(vals[1]);
+    if(!d0) return null;
+
+    function pickBlock(dMost, dOther){
+      const iMost = dsAll.indexOf(dMost);
+      if(iMost<0) return dsAll.slice(0,4);
+      if(dOther && dsAll.indexOf(dOther)>=0){
+        const i2 = dsAll.indexOf(dOther);
+        const lo = Math.min(iMost,i2), hi = Math.max(iMost,i2);
+        if(hi-lo <= 3){
+          let s = Math.max(0, hi-3);
+          s = Math.min(s, lo);
+          s = Math.min(s, dsAll.length-4);
+          return dsAll.slice(s,s+4);
+        }
+      }
+      const s = Math.max(0, Math.min(dsAll.length-4, iMost-1));
+      return dsAll.slice(s,s+4);
+    }
+
+    const block = pickBlock(d0, d1);
+    const cornerMap = {
+      "1-6":[2,3,5,6],
+      "7-12":[8,9,11,12],
+      "13-18":[14,15,17,18],
+      "19-24":[20,21,23,24],
+      "25-30":[26,27,29,30],
+      "31-36":[32,33,35,36]
+    };
+    const nums = [];
+    block.forEach(lbl=>{
+      const [a,b]=lbl.split("-").map(Number);
+      for(let x=a;x<=b;x++) nums.push(x);
+      nums.push(...(cornerMap[lbl]||[]));
+    });
+    const uniq = Array.from(new Set(nums)).sort((a,b)=>a-b);
+
+    // score heuristic: more recent hits inside block
+    const last15 = vals.slice(0,15);
+    const inBlock = (n)=>{
+      if(n===0||n==="00") return false;
+      const v=Number(n);
+      return block.some(lbl=>{
+        const [a,b]=lbl.split("-").map(Number);
+        return v>=a && v<=b;
+      });
+    };
+    const hit6 = last15.slice(0,6).filter(inBlock).length;
+    const hit15 = last15.filter(inBlock).length;
+    let score = 70 + hit6*4 + Math.max(0, hit15-6)*2;
+    score = Math.max(0, Math.min(97, Math.round(score)));
+
+    return {
+      name: "CASH — Corners + DS (Follow the Leader)",
+      score,
+      why: `DS block: ${block.join(", ")} (locked until loss).`,
+      howto:
+`CORNERS + DOUBLE STREETS — FOLLOW THE LEADER (CASH/GRIND)
+
+Selected DS block (4 adjacent, locked until loss)
+${block.join(", ")}
+
+Numbers (DS + paired corners)
+${uniq.join(", ")}
+
+Base (Level 1)
+- Double Streets: 4 adjacent non-overlapping DS × $3 each
+- Corners: paired corners × $1 each
+
+Lock rule
+- Do NOT change DS after wins.
+- Recalculate DS ONLY after a losing spin.
+
+Progression
+- Multiplier m starts 1.
+- Increase m by +1 after every 2 consecutive losses.
+- Ladder down m by −1 after any win (min m=1).
+- Bet sizes at level m:
+  - DS bet = $3 × m
+  - Corner bet = $1 × m
+
+Reset / Exits
+- Reset to Level 1 when session profit ≥ $30.
+- Cashout +$50; Stop loss −$300.`,
+      tag:"CASH",
+      numbers: uniq
+    };
+  }
+
+  function stratSlowSteady(vals){
+    if(vals.length < 15) return null;
+    const last15 = vals.slice(0,15);
+    const c15 = counts(last15);
+    const dozMax = Math.max(c15.d1,c15.d2,c15.d3);
+    const colMax = Math.max(c15.c1,c15.c2,c15.c3);
+    let score = 55 + Math.max(dozMax,colMax)*4;
+    score = Math.max(0, Math.min(90, Math.round(score)));
+    return {
+      name: "CASH — Slow & Steady (situational)",
+      score,
+      why: `Bias: Dozen max ${dozMax}/15, Column max ${colMax}/15.`,
+      howto:
+`SLOW & STEADY (SITUATIONAL)
+
+Use when you see structural bias (dozens/columns leaning) but no clear repeat signal.
+
+How to play (generic)
+- Identify the strongest structural lane (dozen or column) in the last-15.
+- Flat bet with tight session limits; avoid over-progression.
+- Exit if the bias normalizes.
+
+Note
+- This tracker treats this as a situational option, not a primary cash driver.`,
+      tag:"CASH",
+      numbers:[]
+    };
+  }
+
+function stratJunkoHot(vals){
     const w15 = vals.slice(0,15);
     const cts = counts(w15);
     const q = [
@@ -378,57 +625,48 @@ Guardrail: do not place any bet that could breach -$200 on a loss.`;
   }
 
   function scoreAll(vals){
-    const plays = [];
-    const st = tableState(vals);
-    const rep = repeatInfo(vals, 5);
-    const cts15 = counts(vals.slice(0,15));
-    const qMax = Math.max(cts15.gn,cts15.ho,cts15.lo,cts15.m);
+  const plays = [];
 
-    // base strategies
-    const s6 = strat6Diamonds();
-    const sj = stratJunkoHot(vals);
-    const so = stratOppositeSegment(vals);
+  // Existing baseline strategies
+  const s1 = stratComp6Diamonds(vals); if(s1) plays.push(s1);
+  const s2 = stratOppositeSegment(vals); if(s2) plays.push(s2);
+  const s3 = stratJunkoHot(vals); if(s3) plays.push(s3);
+  const s4 = stratDSCashPower(vals); if(s4) plays.push(s4);
 
-    // scoring heuristic (simple, deterministic)
-    // 6 Diamonds: better in repeat-heavy / noisy
-    let s6score = 70;
-    if(st==="Repeat-heavy") s6score = 88;
-    if(cts15.green>=3) s6score += 4;
-    if(rep.corner || rep.ds) s6score += 4;
+  // New CASH strategies
+  const md = stratMoonDance(vals); if(md) plays.push(md);
+  const tj = stratTrinityJunkoV2(vals); if(tj) plays.push(tj);
+  const ftl = stratCornersDSFollowLeader(vals); if(ftl) plays.push(ftl);
+  const ss = stratSlowSteady(vals); if(ss) plays.push(ss);
 
-    // Junko Hot: better when qMax >= 6
-    let sjscore = 55;
-    if(qMax>=6) sjscore = 92;
-    else if(qMax===5) sjscore = 78;
-    else if(st==="Concentrated") sjscore = 70;
+  // Priority order when multiple strategies score >=85 (CASH only)
+  const PRIORITY = [
+    "CASH — Moon Dance 2S/Dozen (Junko Base)",
+    "CASH — Trinity–Junko v2",
+    "CASH — Opposite-Segment Contrarian (Option 1)",
+    "CASH — Corners + DS (Follow the Leader)",
+    "CASH — Junko Hot / Slow & Steady",
+    "CASH — Slow & Steady (situational)"
+  ];
 
-    // Opposite Segment: only meaningful when hottest >=6
-    // estimate hottest count
-    const w15=vals.slice(0,15);
-    const segCounts = {A:0,B:0,C:0,D:0};
-    for(const n of w15){
-      const k = (n==="00") ? "00" : Number(n);
-      if(SEG_A.has(k)) segCounts.A++;
-      if(SEG_B.has(k)) segCounts.B++;
-      if(SEG_C.has(k)) segCounts.C++;
-      if(SEG_D.has(k)) segCounts.D++;
+  plays.sort((a,b)=>{
+    // If both are CASH and both >=85, use priority order first
+    const aCash = (a.tag==="CASH" && a.score>=85);
+    const bCash = (b.tag==="CASH" && b.score>=85);
+    if(aCash && bCash){
+      const ia = PRIORITY.indexOf(a.name);
+      const ib = PRIORITY.indexOf(b.name);
+      if(ia!==-1 && ib!==-1 && ia!==ib) return ia-ib;
     }
-    let hottest="A";
-    for(const k of SEG_ORDER){ if(segCounts[k] > segCounts[hottest]) hottest=k; }
-    const hotN = segCounts[hottest];
-    let soscore = 40;
-    if(hotN>=6) soscore = 86;
-    else if(hotN===5) soscore = 72;
+    // otherwise by score desc
+    if(b.score !== a.score) return b.score - a.score;
+    // stable name
+    return String(a.name).localeCompare(String(b.name));
+  });
 
-    s6.score = Math.max(1, Math.min(99, s6score));
-    sj.score = Math.max(1, Math.min(99, sjscore));
-    so.score = Math.max(1, Math.min(99, soscore));
+  return plays.slice(0,3);
+}
 
-    plays.push(s6,sj,so);
-
-    plays.sort((a,b)=>b.score-a.score);
-    return {state:st, plays:plays.slice(0,3)};
-  }
 
   function trendText(){
     const vals = windowVals(15);
