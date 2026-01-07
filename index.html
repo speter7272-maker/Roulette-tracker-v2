@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • BASE KEYPAD CONFIRMED — ADD TRACKING + WHEEL • v2 • Build: 2025-12-31 • RIVERS READY • wheel + top3 + alert</title>
+  <title>Roulette Trend Tracker • FULL • Build: 2026-01-06 • CASH PRIORITY v13.2</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -71,9 +71,9 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2025-12-31 • RIVERS READY • v2</div>
-    <div class="build">BASE KEYPAD CONFIRMED — ADD TRACKING + WHEEL • v2</div>
-    <div class="sub">Build date: <b>2025-12-31</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-06 • FULL • CASH PRIORITY v13.2</div>
+    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v13.2</div>
+    <div class="sub">Build date: <b>2026-01-06</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
     <div class="card">
       <div class="row">
@@ -231,6 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let sessionId = 1;
 
   const $ = (id) => document.getElementById(id);
+  const trendDismissBtn = $("trendDismissBtn");
+  const trendAlert = $("trendAlert");
 
   function numToKey(n) {
     if (n === "00") return "00";
@@ -340,6 +342,155 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const STRATEGY_DETAILS = {
+    "6 Diamonds + 0/00 (Primary)":
+`6 Diamonds + 0/00 (Primary)
+
+Default forced-play strategy (COMP)
+- Wide coverage grinder for survivability.
+- Progression capped at Step 1 in COMP mode.
+
+Core
+- Use your 6 Diamonds corner structure.
+- Add 0/00 split as your table allows (American wheel).
+
+Exit / Mode rules
+- Stay in COMP when CASH score < 85 or during cooldowns.
+- Switch to CASH only after a reset/completed progression/milestone (per session rules).`,
+
+    "Point Pusher":
+`Point Pusher (COMP)
+
+Profile
+- Column + corners + basket.
+- Smooth ADT profile.
+- Flat betting.
+
+Use when
+- COMP mode default/fallback.
+- Table is flat/choppy without a strong bias.`,
+
+    "Junko Dry (Flat)":
+`Junko Dry (COMP)
+
+Use when
+- Quadrant droughts / weak Junko signal.
+- Low volatility, slow bleed.
+
+Rule
+- Flat only.
+- Recompute every spin using your chosen window.`,
+
+    "DS Cash Power (Base Only)":
+`DS Cash Power (COMP Base)
+
+Use when
+- Mild clustering is present but you do NOT want ladder risk.
+
+Rule
+- Base engagement only (no escalation).
+- Reset/exit on any hostile shift.`,
+
+    "Minimum Bet Placeholder":
+`Minimum Bet Placeholder (COMP)
+
+Use when
+- Extreme noise / greens heavy.
+- Near stop-loss conditions.
+
+Rule
+- Minimum engagement to stay betting.
+- Focus on survivability until structure improves.`,
+
+    "Slow & Steady (Structural Bias)":
+`Slow & Steady (CASH)
+
+Score driver
+- Dozen / Column concentration.
+
+Use when
+- D or C dominance is extreme and CASH qualifies (rank #1, score ≥ 85).
+
+Constraints
+- Bet cap: 4u per bet.
+- Immediate exit on structure break.`,
+
+    "DS Cash Power (Street Cluster)":
+`DS Cash Power (CASH)
+
+Score driver
+- Double street clustering + repeats.
+
+Use when
+- One DS bucket is clearly dominant and CASH qualifies.
+
+Abort
+- If DS score weakens at reassessment.`,
+
+    "Gold Mine (Even-Money Compression)":
+`Gold Mine (CASH)
+
+Score driver
+- High / Low dominance.
+
+Rules
+- Option A (no hedge).
+- Exit as soon as dominance drops.`,
+
+    "Follow-the-Leader 50/50":
+`Follow-the-Leader 50/50 (CASH)
+
+Score driver
+- Run length + dominance.
+
+Use when
+- Run ≥ 3 AND dominance ≥ 12/20 and CASH qualifies.
+
+Exit
+- First streak break.`,
+
+    "Junko Hot (Quadrant Momentum)":
+`Junko Hot (CASH)
+
+Score driver
+- Quadrant momentum (e.g., ≥ strong threshold).
+
+Rules
+- Flat only.
+- Short leash (10–15 spins).
+- Exit immediately if score degrades.`,
+
+    "Win 28 (Coverage Probe)":
+`Win 28 (CASH)
+
+Score driver
+- Coverage / dispersion (last-20).
+
+Rules
+- Flat only.
+- Diagnostic + cash shot.
+- Abort early on hostile start.`,
+
+    "Anti-Last-Dozen (Mean Reversion)":
+`Anti-Last-Dozen (CASH)
+
+Score driver
+- Rotational / flat table.
+
+Rules
+- Conservative ladder.
+- Hard abort on ladder failure.
+- CASH only if it qualifies (rank #1, score ≥ 85).`,
+
+    "Disappearing Streets (Anti-Repeat)":
+`Disappearing Streets (CASH)
+
+Score driver
+- No repeat streets + flat table.
+
+Rules
+- Remove winners.
+- Abort if repeats emerge.`,
+
     "6 Diamonds (Corner Core)":
 `6 Diamonds (Corner Core) — FIXED CORNERS
 
@@ -425,6 +576,138 @@ Exit
     "Sit out":
 `Sit out
 - Keep logging spins until a repeat or concentration appears.`
+  
+    ,
+    "Corners + Double Streets (Follow the Leader — Locked Until Loss)":
+`Corners + Double Streets (Follow the Leader — Locked Until Loss)
+
+Category: CASH / Grind
+Wheel: American
+Table requirement: $10 table allowing ≥ $15 total inside bets.
+
+Base (Level 1) — TOTAL $16 inside
+- Double Streets: 4 adjacent non-overlapping double streets × $3 = $12
+- Corners: 4 paired corners × $1 = $4
+
+Double Street ↔ Corner pairings
+- 1–6   → corner 2/6   (2,3,5,6)
+- 7–12  → corner 8/12  (8,9,11,12)
+- 13–18 → corner 14/18 (14,15,17,18)
+- 19–24 → corner 20/24 (20,21,23,24)
+- 25–30 → corner 26/30 (26,27,29,30)
+- 31–36 → corner 32/36 (32,33,35,36)
+
+How to select the DS block (FOLLOW THE LEADER)
+1) Look at the previous 2 spins (ignore 0/00).
+2) Identify their double streets (one of the 6 DS above).
+3) Choose a block of 4 ADJACENT double streets that includes both if possible.
+   If not possible, include the most recent spin’s double street.
+4) LOCK this DS block until a LOSS occurs.
+
+Numbers to bet (depends on the locked DS block)
+- Bet the 4 double streets in your locked block (all numbers inside them).
+- Also bet the matching 4 corners for those same 4 double streets.
+
+Progression (multiplier m)
+- Start m = 1.
+- Increase m by +1 after every 2 consecutive losses.
+- Ladder down m by −1 after any win (min m = 1).
+
+Bet sizing at level m
+- Double Street bet = $3 × m (each of the 4 double streets)
+- Corner bet       = $1 × m (each of the 4 corners)
+
+Reset
+- Reset to m=1 when session profit ≥ $30.
+- Reset clears loss counter.
+- DS block remains unless the NEXT spin is a loss.
+
+Session rules
+- Cashout: +$50
+- Stop-loss: −$300 (end session immediately).`
+    "Moon Dance 2S/Dozen (Junko Base)":
+`Moon Dance 2S/Dozen — Junko Base (CASH)
+
+Core idea
+- For each dozen, pick the 2 least-hit streets in the prior 15 spins.
+- That yields 6 streets = 18 numbers (straight-up coverage).
+
+Bet
+- Bet $b on each of the 18 numbers.
+- Start b=1; on a full miss (no 18-hit and no 0/00): b doubles.
+- Win if any of the 18 hits OR 0/00 hits: reset b=1 and recompute streets next cycle.
+
+0/00 bailout
+- Only when b >= 8: add $2 on 0 and $2 on 00.
+
+Exits
+- Cash out +$100 (after spin), stop loss −$200 with guardrail.`,
+
+    "Trinity–Junko v2":
+`Trinity–Junko v2 (CASH)
+
+Double Streets
+- Bet DS 1–6 and 7–12 (two 6-lines).
+- ds_unit starts 1; +1 each spin with NO DS hit; cap 5.
+- If any DS hits (1–12): remove BOTH DS until next reset; ds_unit=1.
+
+Corners (8)
+- 13/17, 14/18, 19/23, 20/24, 25/29, 26/30, 31/35, 32/36
+- Remove any corner(s) that hit.
+- corner_unit doubles every 3 spins (win or loss); cap 16.
+
+Resets
+- Reset DS+corners+units at +$15 milestones (15/30/45/60/75/90) OR when ≤2 corners remain.
+
+Exits
+- Cashout +$90 (after spin), stop loss −$200 with guardrail.`,
+
+    "Opposite-Segment Contrarian (Option 1)":
+`Opposite-Segment Contrarian (CASH)
+
+Segments (00 encoded as 99 in data)
+A = 13, 1, 00, 27, 10, 9, 28, 0, 2, 14
+B = 31, 18, 6, 21, 33, 17, 5, 22, 32, 20
+C = 25, 29, 12, 8, 19, 26, 30, 11, 7
+D = 36, 24, 3, 15, 34, 35, 23, 4, 16
+Opposite: A↔C, B↔D
+
+Entry
+- When hottest segment in last-15 has >= 6 hits, bet the opposite segment.
+
+Bet
+- $u per number in the bet segment.
+- Escalation: +1u after 3 consecutive losing bet-spins.
+
+Exits
+- Cashout +$100 (after spin), stop loss −$200 with guardrail.`,
+
+    "Corners + Double Streets (Follow the Leader)":
+`Corners + Double Streets — Follow the Leader (CASH/GRIND)
+
+Base (Level 1)
+- 4 adjacent DS × $3 each + paired corners × $1 each.
+
+Pairings
+1–6→2/6 (2,3,5,6)
+7–12→8/12 (8,9,11,12)
+13–18→14/18 (14,15,17,18)
+19–24→20/24 (20,21,23,24)
+25–30→26/30 (26,27,29,30)
+31–36→32/36 (32,33,35,36)
+
+Selection
+- Use previous 2 spins to select a 4-DS adjacent block that includes both if possible; else include the most recent.
+- LOCK DS block until a loss; recalc only after a losing spin.
+
+Progression
+- Multiplier m starts 1; +1 after every 2 consecutive losses.
+- Ladder down m −1 after any win (min 1).
+- Bets: DS=$3*m, corners=$1*m.
+
+Exits
+- Cashout +$50, stop loss −$300.`,
+
   };
 
   function openExplain(title, body) {
@@ -659,65 +942,303 @@ Exit
   }
 
   // Strategy scoring (simple but consistent with earlier intent)
-  function scoreStrategies(vals) {
-    const w15 = vals.slice(0,15);
-    const cts15 = counts(w15);
-    const rn = repeatNumberInfo(vals, 5);
-    const rs3 = repeatStreetInfo(vals, 3);
-    const rs5 = repeatStreetInfo(vals, 5);
+    // Strategy scoring with CASH/COMP gate (Top 8 CASH). CASH is eligible only if it is #1 overall AND score >= 85.
+  // Strategy scoring with CASH priority + suppression.
+// CASH is eligible only if the chosen CASH strategy is #1 overall AND score >= 85.
+const CASH_PRIORITY = [
+  "Moon Dance 2S/Dozen (Junko Base)",
+  "Trinity–Junko v2",
+  "Opposite-Segment Contrarian (Option 1)",
+  "Corners + Double Streets (Follow the Leader)",
+  "Junko Hot (Quadrant Momentum)",
+  "Slow & Steady (Structural Bias)"
+];
 
-    let tableState = "Flat / Choppy";
-    if(rn.flag || rs3.flag) tableState = "Repeat-Heavy";
-    else {
-      const colMax15 = Math.max(cts15.c1, cts15.c2, cts15.c3);
-      const dozMax15 = Math.max(cts15.d1, cts15.d2, cts15.d3);
-      if(colMax15 >= 7 || dozMax15 >= 7) tableState = "Concentrated";
+function streetKey(n){
+  const s = streetId(n);
+  if(!s) return null;
+  // map street number to dozen street index 1..4
+  // Streets: 1-4 in dozen1, 5-8 dozen2, 9-12 dozen3 (by street)
+  // But we want within-dozen: 1-4, 5-8, 9-12 per dozen in number-space:
+  // StreetId already 1..12 with 1=1-3 ... 12=34-36
+  const within = ((s-1) % 4) + 1; // 1..4
+  const dozen = s<=4 ? 1 : (s<=8 ? 2 : 3);
+  return {dozen, within, street: s};
+}
+
+function leastTwoStreetsPerDozen(last15){
+  const counts = {1:[0,0,0,0], 2:[0,0,0,0], 3:[0,0,0,0]};
+  last15.forEach(n=>{
+    const k = streetKey(n);
+    if(!k) return;
+    counts[k.dozen][k.within-1] += 1;
+  });
+  // pick two least-hit within each dozen; ties -> lower within index
+  const picks = {};
+  [1,2,3].forEach(d=>{
+    const arr = counts[d].map((c,i)=>({c,i:i+1}));
+    arr.sort((a,b)=> (a.c-b.c) || (a.i-b.i));
+    picks[d] = [arr[0].i, arr[1].i];
+  });
+  return {counts, picks};
+}
+
+function numbersForDozenStreet(dozen, within){
+  // within 1..4 for a dozen => streets ranges in number-space
+  const base = (dozen-1)*12;
+  const start = base + (within-1)*3 + 1;
+  return [start,start+1,start+2];
+}
+
+function moonDanceNumbers(last15){
+  const {picks} = leastTwoStreetsPerDozen(last15);
+  const nums = [];
+  [1,2,3].forEach(d=>{
+    picks[d].forEach(within=>{
+      nums.push(...numbersForDozenStreet(d,within));
+    });
+  });
+  return nums; // 18 nums
+}
+
+// Opposite-Segment mapping (00 handled as "00" string in this tracker)
+const SEG_A = new Set([13,1,"00",27,10,9,28,0,2,14]);
+const SEG_B = new Set([31,18,6,21,33,17,5,22,32,20]);
+const SEG_C = new Set([25,29,12,8,19,26,30,11,7]);
+const SEG_D = new Set([36,24,3,15,34,35,23,4,16]);
+const SEG_ORDER = ["A","B","C","D"];
+function segmentOf(n){
+  const k = (n==="00") ? "00" : Number(n);
+  if(SEG_A.has(k)) return "A";
+  if(SEG_B.has(k)) return "B";
+  if(SEG_C.has(k)) return "C";
+  if(SEG_D.has(k)) return "D";
+  return null;
+}
+function oppositeSeg(seg){ return seg==="A"?"C":(seg==="C"?"A":(seg==="B"?"D":"B")); }
+function segNumbers(seg){
+  const map = {A:[13,1,"00",27,10,9,28,0,2,14], B:[31,18,6,21,33,17,5,22,32,20], C:[25,29,12,8,19,26,30,11,7], D:[36,24,3,15,34,35,23,4,16]};
+  return map[seg] || [];
+}
+
+function dsRangeOf(n){
+  if(n==="00"||n===0) return null;
+  const v = Number(n);
+  if(!(v>=1 && v<=36)) return null;
+  const s = streetId(v); // 1..12
+  if(!s) return null;
+  const dsStartStreet = (s%2===1) ? s : (s-1); // odd street starts DS
+  const a = (dsStartStreet-1)*3 + 1;
+  const b = a+5;
+  return {start:a, end:b, dsStreetStart: dsStartStreet}; // e.g., 1-6, 7-12, ...
+}
+function dsKeyLabel(r){ return r ? `${r.start}-${r.end}` : null; }
+
+function cornersForDSRange(label){
+  const map = {
+    "1-6":[2,3,5,6],
+    "7-12":[8,9,11,12],
+    "13-18":[14,15,17,18],
+    "19-24":[20,21,23,24],
+    "25-30":[26,27,29,30],
+    "31-36":[32,33,35,36]
+  };
+  return map[label] || [];
+}
+
+function pickFTLBlock(last2){
+  if(last2.length<1) return null;
+  const d1 = dsKeyLabel(dsRangeOf(last2[0]));
+  const d2 = last2.length>=2 ? dsKeyLabel(dsRangeOf(last2[1])) : null;
+  const all = ["1-6","7-12","13-18","19-24","25-30","31-36"];
+  const idx = (x)=> all.indexOf(x);
+  if(!d1) return null;
+  if(d2 && idx(d2)!==-1){
+    const i1 = idx(d1), i2 = idx(d2);
+    const lo = Math.min(i1,i2), hi = Math.max(i1,i2);
+    // can we choose 4 adjacent including both?
+    // choose window of 4 containing [lo,hi]
+    if(hi-lo <= 3){
+      let start = Math.max(0, hi-3);
+      start = Math.min(start, lo);
+      start = Math.min(start, all.length-4);
+      return all.slice(start, start+4);
     }
+  }
+  // fallback: include most recent d1, center window around it
+  const i = idx(d1);
+  const start = Math.max(0, Math.min(all.length-4, i-1));
+  return all.slice(start,start+4);
+}
 
-    const plays = [];
-    const add = (name, score, why) => plays.push({name, score, why});
+function scoreMoonDance(vals){
+  const last15 = vals.slice(0,15);
+  if(last15.length<15) return {score:0, why:"Need 15 spins."};
+  const {counts, picks} = leastTwoStreetsPerDozen(last15);
+  // score higher when depletion is strong: lowest streets very low (0-1 hits)
+  const lows = [];
+  [1,2,3].forEach(d=>{
+    picks[d].forEach(within=>{
+      lows.push(counts[d][within-1]);
+    });
+  });
+  const avgLow = lows.reduce((a,b)=>a+b,0)/lows.length;
+  const zeros = lows.filter(x=>x===0).length;
+  let score = 70 + zeros*6 + Math.max(0, (2-avgLow))*10; // heuristic
+  score = Math.max(0, Math.min(99, Math.round(score)));
+  const nums = moonDanceNumbers(last15);
+  return {score, why:`Least-hit streets identified per dozen (18-number coverage).`, numbers: nums};
+}
 
-    if(vals.length < 10) {
-      add("Sit out", 1, "Log at least 10 spins for trend signals.");
-      return {state:tableState, plays:plays.slice(0,3), primary:plays[0]};
+function scoreTrinity(vals){
+  const last15 = vals.slice(0,15);
+  if(last15.length<15) return {score:0, why:"Need 15 spins."};
+  const dsHits = last15.filter(n=>{
+    if(n==="00"||n===0) return false;
+    const v = Number(n);
+    return v>=1 && v<=12; // DS 1-12 coverage proxy
+  }).length;
+  const cornerSet = new Set([13,14,15,17,18,19,20,21,23,24,25,26,27,29,30,31,32,33,35,36]);
+  const cornerHits = last15.filter(n=> n!=="00" && cornerSet.has(Number(n))).length;
+  let score = 68 + Math.min(20, cornerHits)*1.0 + Math.max(0, 6-dsHits)*3; // favors corner action + DS cold
+  score = Math.max(0, Math.min(99, Math.round(score)));
+  return {score, why:"Corner density + DS 1–12 state supports Trinity cadence.", numbers: Array.from(cornerSet).sort((a,b)=>a-b)};
+}
+
+function scoreOppSeg(vals){
+  const last15 = vals.slice(0,15);
+  if(last15.length<15) return {score:0, why:"Need 15 spins."};
+  const counts = {A:0,B:0,C:0,D:0};
+  last15.forEach(n=>{
+    const s = segmentOf(n);
+    if(s) counts[s]+=1;
+  });
+  // tie-break A->B->C->D
+  let hottest = "A";
+  SEG_ORDER.forEach(seg=>{
+    if(counts[seg] > counts[hottest]) hottest = seg;
+  });
+  const hotCount = counts[hottest];
+  let score = 55 + Math.max(0, hotCount-4)*10; // 5->65, 6->75, 7->85...
+  if(hotCount>=6) score += 10;
+  score = Math.max(0, Math.min(99, Math.round(score)));
+  const betSeg = oppositeSeg(hottest);
+  return {score, why:`Hottest segment ${hottest}=${hotCount}/15 → bet opposite ${betSeg}.`, numbers: segNumbers(betSeg)};
+}
+
+function scoreFTL(vals){
+  if(vals.length<3) return {score:0, why:"Need at least 3 spins."};
+  const last2 = vals.slice(0,2);
+  const block = pickFTLBlock(last2);
+  if(!block) return {score:0, why:"No DS mapping."};
+  // score higher if last 6 contains hits inside block
+  const last15 = vals.slice(0,15);
+  const inBlock = (n)=>{
+    if(n==="00"||n===0) return false;
+    const v = Number(n);
+    for(const lbl of block){
+      const [a,b]=lbl.split("-").map(Number);
+      if(v>=a && v<=b) return true;
     }
+    return false;
+  };
+  const hit6 = last15.slice(0,6).filter(inBlock).length;
+  const hit15 = last15.filter(inBlock).length;
+  let score = 60 + hit6*5 + Math.max(0, hit15-6)*2;
+  score = Math.max(0, Math.min(95, Math.round(score)));
+  // numbers to bet: all DS numbers plus corners mapped per DS
+  const nums = [];
+  block.forEach(lbl=>{
+    const [a,b]=lbl.split("-").map(Number);
+    for(let x=a;x<=b;x++) nums.push(x);
+    nums.push(...cornersForDSRange(lbl));
+  });
+  const uniq = Array.from(new Set(nums)).sort((a,b)=>a-b);
+  return {score, why:`Follow last 2 spins → DS block ${block.join(", ")} (locked until loss).`, block, numbers: uniq};
+}
 
-    // Repeat-Heavy -> 6D
-    if(tableState === "Repeat-Heavy") {
-      add("6 Diamonds (Corner Core)", 92, [rn.flag?rn.text:null, rs3.flag?rs3.text:null].filter(Boolean).join(" • "));
-    } else {
-      add("6 Diamonds (Corner Core)", 70, "Choppy mix: use coverage grinder while waiting for a clearer trend.");
+function scoreJunkoHot(vals){
+  const last15 = vals.slice(0,15);
+  const c15 = counts(last15);
+  const qMax = Math.max(c15.gn,c15.ho,c15.lo,c15.m);
+  let score = 55 + Math.max(0, qMax-4)*10; // 5->65,6->75,7->85
+  if(qMax>=6) score += 10;
+  score = Math.max(0, Math.min(95, Math.round(score)));
+  return {score, why:`Junko quadrant momentum: max ${qMax}/15.`, numbers: []};
+}
+
+function scoreSlowSteady(vals){
+  const last15 = vals.slice(0,15);
+  const c15 = counts(last15);
+  const dozMax = Math.max(c15.d1,c15.d2,c15.d3);
+  const colMax = Math.max(c15.c1,c15.c2,c15.c3);
+  let score = 50 + Math.max(dozMax, colMax)*4;
+  score = Math.max(0, Math.min(90, Math.round(score)));
+  return {score, why:`Structural bias: Dozen max ${dozMax}/15, Column max ${colMax}/15.`, numbers: []};
+}
+
+function scoreStrategies(vals) {
+  const plays = [];
+  const add = (name, score, why, extra={}) => plays.push({name, score, why, ...extra});
+
+  // Base COMP always present
+  add("6 Diamonds + 0/00 (Primary)", 70, "Default COMP coverage / survivability.");
+
+  const md = scoreMoonDance(vals); add("Moon Dance 2S/Dozen (Junko Base)", md.score, md.why, {numbers: md.numbers});
+  const tr = scoreTrinity(vals); add("Trinity–Junko v2", tr.score, tr.why, {numbers: tr.numbers});
+  const os = scoreOppSeg(vals); add("Opposite-Segment Contrarian (Option 1)", os.score, os.why, {numbers: os.numbers});
+  const ftl = scoreFTL(vals); add("Corners + Double Streets (Follow the Leader)", ftl.score, ftl.why, {numbers: ftl.numbers, block: ftl.block});
+  const jh = scoreJunkoHot(vals); add("Junko Hot (Quadrant Momentum)", jh.score, jh.why);
+  const ss = scoreSlowSteady(vals); add("Slow & Steady (Structural Bias)", ss.score, ss.why);
+
+  // Sort by score for display
+  plays.sort((a,b)=>b.score-a.score);
+  const top3 = plays.slice(0,3);
+
+  // Determine active recommendation with CASH priority rule
+  let primary = top3[0] || {name:"Sit out", score:1, why:"No clear edge."};
+
+  // CASH gate: choose among CASH-eligible (score>=85) using priority order.
+  const eligible = plays.filter(p => p.score >= 85 && CASH_PRIORITY.includes(p.name));
+  let chosenCash = null;
+  if(eligible.length){
+    for(const nm of CASH_PRIORITY){
+      const p = eligible.find(x => x.name === nm);
+      if(p){ chosenCash = p; break; }
     }
-
-    // Hot quadrant last-15
-    const qMax = Math.max(cts15.gn, cts15.ho, cts15.lo, cts15.m);
-    if(qMax >= 6) {
-      add("Hot Quadrant last-15 (Option A)", 87, `Junko quadrant hot: max=${qMax}/15.`);
-    } else if(qMax >= 5) {
-      add("Junko Quadrants (hot/dry)", 75, `Junko leaning: max=${qMax}/15 (watch for 6/15 trigger).`);
+  }
+  // If chosenCash exists, it becomes primary only if it's also #1 overall (per operating spec).
+  if(chosenCash && plays[0] && plays[0].name === chosenCash.name){
+    primary = chosenCash;
+    primary.mode = "CASH";
+  } else {
+    primary.mode = "COMP";
+    // If table unclear/no data, stay COMP.
+    if(vals.length < 10){
+      primary = {name:"Sit out", score:1, why:"Log at least 10 spins for trend signals.", mode:"COMP"};
+    } else if(primary.name !== "6 Diamonds + 0/00 (Primary)" && primary.score < 85){
+      primary = plays.find(p=>p.name==="6 Diamonds + 0/00 (Primary)") || primary;
+      primary.mode = "COMP";
     }
-
-    // Moving Streets Adjacent Fade when no repeat streets in last-5
-    if(!rs5.flag && tableState === "Flat / Choppy") {
-      add("Moving Streets (Adjacent Fade)", 64, "No repeat streets in last-5 + choppy table: fade last streets and bet adjacent streets.");
-    }
-
-    // DS Cash Power proxy: if DS counts show bias (sum >= 8 in last-15 and any DS>=3)
-    const dsc = dsCounts(w15);
-    const mx1 = Math.max(...dsc.d1), mx2 = Math.max(...dsc.d2), mx3 = Math.max(...dsc.d3);
-    const dsSum = mx1 + mx2 + mx3;
-    const dsHas3 = (mx1>=3)||(mx2>=3)||(mx3>=3);
-    if(dsSum >= 8 && dsHas3) {
-      add("DS Cash Power", 82, `DS bias: best-sum ${dsSum} in last-15 (D1 ${mx1}, D2 ${mx2}, D3 ${mx3}).`);
-    }
-
-    plays.sort((a,b)=>b.score-a.score);
-    const top = plays.slice(0,3);
-    const primary = top[0] || {name:"Sit out", score:1, why:"No clear edge."};
-    return {state:tableState, plays:top, primary};
   }
 
-  function render() {
+  // Table state simple
+  const rn = repeatNumberInfo(vals, 5);
+  const rs3 = repeatStreetInfo(vals, 3);
+  let state = "Flat / Choppy";
+  if(rn.flag || rs3.flag) state = "Repeat-Heavy";
+  else {
+    const w15 = vals.slice(0,15);
+    const c15 = counts(w15);
+    const colMax15 = Math.max(c15.c1,c15.c2,c15.c3);
+    const dozMax15 = Math.max(c15.d1,c15.d2,c15.d3);
+    if(colMax15 >= 7 || dozMax15 >= 7) state = "Concentrated";
+  }
+
+  return {state, plays: top3, primary};
+}
+
+function render() {
     $("winLabel").textContent = "Last " + windowN;
     $("spinCount").textContent = String(spins.length);
     $("sessionCount").textContent = String(spins.filter(x => x.s===sessionId).length);
@@ -740,7 +1261,7 @@ Exit
     $("lastList").value = spins.slice(0,20).map(x => (x.n==="00"?"00":String(x.n))).join(", ");
 
     const scored = scoreStrategies(recent);
-    $("recommend").textContent = scored.primary.name;
+    $("recommend").textContent = `${scored.primary.mode} — ${scored.primary.name}`;
     $("reason").textContent = scored.primary.why || "—";
     $("state").textContent = scored.state;
     $("state2").textContent = `Window: last ${windowN} • Session: ${sessionId}`;
@@ -754,10 +1275,10 @@ Exit
       div.innerHTML = `
         <div class="playhdr">
           <div>
-            <div style="font-weight:900">${idx+1}. ${p.name}</div>
+            <div style="font-weight:900">${idx+1}. ${p.mode} — ${p.name}</div>
             <div class="small">${(p.why||"—").replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
           </div>
-          <div class="tag">Score ${p.score}</div>
+          <div class="tag">${p.mode} • ${p.score}</div>
         </div>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn small" data-exp="${p.name}">Explain</button>
