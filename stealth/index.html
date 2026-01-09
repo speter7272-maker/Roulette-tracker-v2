@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • FULL • Build: 2026-01-09 • CASH PRIORITY v14.2</title>
+  <title>Roulette Trend Tracker • FULL • Build: 2026-01-06 • CASH PRIORITY v13.3</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -71,9 +71,9 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-09 • FULL • CASH PRIORITY v14.2</div>
-    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v14.2</div>
-    <div class="sub">Build date: <b>2026-01-07</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-06 • FULL • CASH PRIORITY v13.3</div>
+    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v13.3</div>
+    <div class="sub">Build date: <b>2026-01-06</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
     <div class="card">
       <div class="row">
@@ -125,15 +125,6 @@
             </div>
             <div class="k" id="reason" style="margin-top:8px">No data yet.</div>
           </div>
-          <div class="box">
-            <div class="k">Table state</div>
-            <div class="v" id="tableState">—</div>
-            <div class="k" id="tableStateDetail" style="margin-top:8px">—</div>
-            <div class="k" id="repeatsInfo" style="margin-top:8px"></div>
-            <div class="k" id="streetRepeatsInfo" style="margin-top:4px"></div>
-            <div class="k" id="hydraCold4" style="margin-top:4px"></div>
-            <div class="k" id="sinceGreen" style="margin-top:4px"></div>
-          </div>
         <div id="trendAlert" class="alert" style="display:none;margin-top:10px">
           <div style="font-weight:800;margin-bottom:4px">Trend change alert</div>
           <div id="trendAlertText">—</div>
@@ -148,6 +139,27 @@
             <div class="k" id="state2">—</div>
           </div>
         </div>
+          <div class="box">
+            <div class="k">Repeat numbers (≤5 spins)</div>
+            <div class="v mono" id="repNums">—</div>
+            <div class="k" id="repNums2">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Repeat streets (≤3 spins)</div>
+            <div class="v mono" id="repStreets">—</div>
+            <div class="k" id="repStreets2">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Hydra coldest 4 (since green)</div>
+            <div class="v mono" id="hydraCold4">—</div>
+            <div class="k" id="hydraCold4b">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Dirty Bird DB‑CDS (last15 no‑green)</div>
+            <div class="v mono" id="dbcds">—</div>
+            <div class="k" id="dbcds2">—</div>
+          </div>
+
 
         <div class="hr"></div>
 
@@ -249,31 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const v = Number(n);
     return Number.isFinite(v) ? v : null;
   }
-
-  // Normalize spin inputs across the app:
-  // - Accepts numbers or strings ("00", "0", "99", etc.)
-  // - Treats 99 as "00" (legacy encoding)
-  function normSpin(v) {
-    if (v === null || v === undefined) return null;
-    const s = String(v).trim();
-    if (s === "") return null;
-    if (s === "00" || s === "99") return "00";
-    if (s === "0") return 0;
-    const n = Number(s);
-    if (!Number.isFinite(n)) return null;
-    if (Number.isInteger(n) && n >= 0 && n <= 36) return n;
-    return null;
-  }
-  function normalizeSpin(v) { return normSpin(v); }
-
-// Return the newest N values from a newest-first array.
-function lastN(arr, n){
-  if(!Array.isArray(arr)) return [];
-  const k = Math.max(0, Math.min(arr.length, Number(n)||0));
-  return arr.slice(0, k);
-}
-
-
 
   function isGreen(n) { return (n === "00" || Number(n) === 0); }
   function isRed(n)   { return (n !== "00" && RED.has(Number(n))); }
@@ -742,23 +729,7 @@ Progression
 Exits
 - Cashout +$50, stop loss −$300.`,
 
-  
-  "Dirty Bird — Cold Dozen Switch (DB-CDS)": {
-    type: "Cash / Comp (10 straight-ups)",
-    trigger: "After 15 non-green spins; default bet coldest dozen. Switch to hottest dozen when coldest hits ≤3 in last-15.",
-    howTo: [
-      "Warmup: record spins until you have 15 NON-GREEN results (ignore 0 and 00).",
-      "Compute dozen counts over those 15 non-green spins.",
-      "If the coldest dozen has ≤3 hits: SWITCH mode → bet the HOTTEST dozen, leaving off the 2 hottest numbers in that dozen.",
-      "Otherwise: COLD mode → bet the COLDEST dozen, leaving off the 2 coldest numbers in that dozen.",
-      "Bet the remaining 10 numbers straight-up at unit u.",
-      "Progression (Comp variant): after 3 consecutive misses, double u; any hit resets u=1.",
-      "Session exits: Cashout/Stoploss per your tracker profile; obey guardrail."
-    ],
-    bets: "10 straight-ups (10 numbers) — tracker will show: dozen, 2 excluded numbers, and the 10 numbers to bet.",
-    notes: "Green (0/00) is ignored for counts; 00 is encoded as 99 in data inputs."
-  },
-};
+  };
 
   function openExplain(title, body) {
     $("expTitle").textContent = title || "Strategy details";
@@ -996,17 +967,12 @@ Exits
   // Strategy scoring with CASH priority + suppression.
 // CASH is eligible only if the chosen CASH strategy is #1 overall AND score >= 85.
 const CASH_PRIORITY = [
-  "Hydra v1.5B — Hybrid Switch",
-  "Hydra v1.5B — Columns (Fixed)",
-  "Corners + DS Tightened Variant",
-  "Junko 10 to Win (Quadrant-Gated)",
   "Moon Dance 2S/Dozen (Junko Base)",
-  "Dirty Bird — Cold Dozen Switch (DB-CDS)",
   "Trinity–Junko v2",
   "Opposite-Segment Contrarian (Option 1)",
-  "Disappearing Streets (Comp Builder)",
+  "Corners + Double Streets (Follow the Leader)",
   "Junko Hot (Quadrant Momentum)",
-  "Slow & Steady (Structural Bias)",
+  "Slow & Steady (Structural Bias)"
 ];
 
 function streetKey(n){
@@ -1222,45 +1188,6 @@ function scoreJunkoHot(vals){
   return {score, why:`Junko quadrant momentum: max ${qMax}/15.`, numbers: []};
 }
 
-function scoreJunko10ToWin(windowN, vals) {
-  const w = lastN(vals, windowN);
-  if (w.length < 15) return { score: 0, label: "Need 15+", detail: "Warmup" };
-
-  const lookback = 8;
-  const tail = w.slice(-lookback).map(n => normalizeSpin(n));
-  const sets = {
-    GN: new Set([99,0,1,2,9,10,13,14,27,28]),
-    HO: new Set([24,25,26,29,30,33,34,35,36]),
-    LO: new Set([3,4,8,11,12,15,16,22,23]),
-    M:  new Set([5,6,7,17,18,19,20,21,31,32]),
-  };
-
-  const counts = { GN:0, HO:0, LO:0, M:0 };
-  for (const x of tail) {
-    for (const k of Object.keys(sets)) {
-      if (sets[k].has(x)) { counts[k]++; break; }
-    }
-  }
-
-  const zeros = Object.keys(counts).filter(k => counts[k] === 0);
-  if (!zeros.length) return { score: 58, label: "No drought", detail: "Need a missing quadrant in last 8" };
-
-  const nonzero = Object.keys(counts).filter(k => counts[k] > 0).map(k => counts[k]);
-  let balanced = false;
-  if (nonzero.length) {
-    const mx = Math.max(...nonzero), mn = Math.min(...nonzero);
-    balanced = (mx - mn) <= 1;
-  }
-
-  const order = ["GN","HO","LO","M"];
-  const missing = order.find(k => zeros.includes(k)) || zeros[0];
-
-  const score = balanced ? 88 : 76;
-  return { score, label: `Missing ${missing}`, detail: `Counts(last 8): GN ${counts.GN} | HO ${counts.HO} | LO ${counts.LO} | M ${counts.M}` };
-}
-
-
-
 function scoreSlowSteady(vals){
   const last15 = vals.slice(0,15);
   const c15 = counts(last15);
@@ -1271,118 +1198,6 @@ function scoreSlowSteady(vals){
   return {score, why:`Structural bias: Dozen max ${dozMax}/15, Column max ${colMax}/15.`, numbers: []};
 }
 
-
-function scoreHydraColumns(vals){
-  // Heuristic: strong and persistent column imbalance favors column-based Hydra.
-  const cols = vals.columns.counts; // [c1,c2,c3]
-  const sorted = [...cols].sort((a,b)=>b-a);
-  const gap = sorted[0]-sorted[2];
-  const score = Math.min(98, 70 + gap*8);
-  const why = gap >= 3 ? `Column imbalance detected (gap=${gap} in last ${vals.window}).` : `Mild column skew (gap=${gap}); treat as backup.`;
-  // Suggest betting the 2 cold columns (fixed) as Tier 1 focus.
-  const coldIdx = cols.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v).slice(0,2).map(x=>x.i+1);
-  const numbers = coldIdx.includes(1)&&coldIdx.includes(2) ? "C1+C2" :
-                  coldIdx.includes(1)&&coldIdx.includes(3) ? "C1+C3" : "C2+C3";
-  return {score, why, numbers:`Tier1 focus: ${numbers} (columns)`};
-}
-
-function scoreHydraHybrid(vals){
-  // Mode select: columns vs dozens based on whichever has clearer imbalance.
-  const cols = vals.columns.counts;
-  const doz = vals.dozens.counts;
-  const colGap = Math.max(...cols)-Math.min(...cols);
-  const dozGap = Math.max(...doz)-Math.min(...doz);
-  const gap = Math.max(colGap, dozGap);
-  const score = Math.min(99, 72 + gap*9);
-  const mode = (colGap >= dozGap) ? "Columns" : "Dozens";
-  const why = gap >= 3 ? `Clear ${mode.toLowerCase()} imbalance (gap=${gap} in last ${vals.window}); hybrid mode selects ${mode}.` :
-                        `No clear imbalance (gap=${gap}); use only if you want disciplined structure.`;
-  return {score, why, numbers:`Mode: ${mode} (Tier1), then T1.5–T4 ladder`};
-}
-
-function scoreCornersDSTight(vals){
-  // Heuristic: if last-15 shows clustering inside a contiguous DS block, tightened DS+corners can be viable.
-  const dsCounts = vals.doubleStreets.perDozenFlat; // array of 12 DS buckets, if provided
-  if(!dsCounts){
-    return {score:78, why:"DS distribution unavailable; treat as conditional.", numbers:"4 adjacent DS block + recovery corners"};
-  }
-  const max = Math.max(...dsCounts);
-  const score = Math.min(96, 68 + max*5);
-  const why = `Top DS bucket count=${max} in last ${vals.window}; tightened DS lock can exploit local clustering.`;
-  return {score, why, numbers:"4 DS @ $2×u; corners recovery after 3 DS misses; ramp green hedge"};
-}
-
-function scoreDisappearingStreets(vals){
-  // Comp-builder / low confidence cash: prefer when streets are repeating.
-  const score = 74;
-  const why = "Comp builder; use only if street repeat behavior is obvious.";
-  return {score, why, numbers:"Situational street coverage (comp mode)"};
-}
-
-
-
-
-function scoreDBCDS(vals){
-  // Dirty Bird — Cold Dozen Switch (DB-CDS)
-  // Uses last 15 NON-GREEN spins (0 and 00/99 ignored).
-  const window = [];
-  for(const v of vals){
-    const n = normSpin(v);
-    if(n===null) continue;
-    if(isGreen(n)) continue;
-    if(typeof n==="number" && n>=1 && n<=36) window.push(n);
-    if(window.length>=15) break;
-  }
-  if(window.length < 15) return {score:0, why:"Need 15 non-green spins.", dozen:null, exclude:[], numbers:[]};
-
-  const counts = {D1:0,D2:0,D3:0};
-  for(const n of window){
-    if(n<=12) counts.D1++;
-    else if(n<=24) counts.D2++;
-    else counts.D3++;
-  }
-  const tieOrder = ["D1","D2","D3"];
-  let cold="D1", hot="D1";
-  let minC=Infinity, maxC=-Infinity;
-  for(const dz of tieOrder){
-    const c = counts[dz];
-    if(c<minC){minC=c; cold=dz;}
-    if(c>maxC){maxC=c; hot=dz;}
-  }
-  const coldHits = counts[cold];
-  const mode = (coldHits<=3) ? "SWITCH" : "COLD_DOZEN";
-  const dz = (mode==="SWITCH") ? hot : cold;
-
-  const min = (dz==="D1")?1:(dz==="D2")?13:25;
-  const max = (dz==="D1")?12:(dz==="D2")?24:36;
-  const numCounts = {};
-  for(let i=min;i<=max;i++) numCounts[i]=0;
-  for(const n of window){
-    if(n>=min && n<=max) numCounts[n] = (numCounts[n]||0)+1;
-  }
-  const entries = Object.entries(numCounts).map(([k,v])=>({n:+k,c:v}));
-  let exclude=[];
-  if(mode==="COLD_DOZEN"){
-    entries.sort((a,b)=>(a.c-b.c)||(a.n-b.n));
-    exclude=[entries[0].n, entries[1].n];
-  }else{
-    entries.sort((a,b)=>(b.c-a.c)||(a.n-b.n));
-    exclude=[entries[0].n, entries[1].n];
-  }
-  const numbers=[];
-  for(let i=min;i<=max;i++) if(!exclude.includes(i)) numbers.push(i);
-
-  let score = 0;
-  if(mode==="SWITCH") score = 90;
-  else score = Math.max(80, Math.min(92, 80 + Math.max(0,(6-coldHits))*2));
-
-  const why = (mode==="SWITCH")
-    ? `DB-CDS SWITCH: bet ${dz}, leave off ${exclude[0]},${exclude[1]}`
-    : `DB-CDS COLD: bet ${dz}, leave off ${exclude[0]},${exclude[1]}`;
-
-  return {score, why, mode, dozen:dz, exclude, numbers, dozenCounts:counts, coldestDozen:cold, coldestHits:coldHits};
-}
-
 function scoreStrategies(vals) {
   const plays = [];
   const add = (name, score, why, extra={}) => plays.push({name, score, why, ...extra});
@@ -1391,21 +1206,13 @@ function scoreStrategies(vals) {
   add("6 Diamonds + 0/00 (Primary)", 70, "Default COMP coverage / survivability.");
 
   const md = scoreMoonDance(vals); add("Moon Dance 2S/Dozen (Junko Base)", md.score, md.why, {numbers: md.numbers});
-  
-const db = scoreDBCDS(vals); add("Dirty Bird — Cold Dozen Switch (DB-CDS)", db.score, db.why, {numbers: db.numbers, dozen: db.dozen, exclude: db.exclude, mode: db.mode});
-const tr = scoreTrinity(vals); add("Trinity–Junko v2", tr.score, tr.why, {numbers: tr.numbers});
+  const tr = scoreTrinity(vals); add("Trinity–Junko v2", tr.score, tr.why, {numbers: tr.numbers});
   const os = scoreOppSeg(vals); add("Opposite-Segment Contrarian (Option 1)", os.score, os.why, {numbers: os.numbers});
   const ftl = scoreFTL(vals); add("Corners + Double Streets (Follow the Leader)", ftl.score, ftl.why, {numbers: ftl.numbers, block: ftl.block});
   const jh = scoreJunkoHot(vals); add("Junko Hot (Quadrant Momentum)", jh.score, jh.why);
-  const j10 = scoreJunko10ToWin(windowN, vals); add("Junko 10 to Win (Quadrant-Gated)", j10.score, j10.label);
   const ss = scoreSlowSteady(vals); add("Slow & Steady (Structural Bias)", ss.score, ss.why);
 
-// New rotation strategies
-const hc = scoreHydraColumns(vals); add("Hydra v1.5B — Columns (Fixed)", hc.score, hc.why, {numbers: hc.numbers});
-const hh = scoreHydraHybrid(vals); add("Hydra v1.5B — Hybrid Switch", hh.score, hh.why, {numbers: hh.numbers});
-const ct = scoreCornersDSTight(vals); add("Corners + DS Tightened Variant", ct.score, ct.why, {numbers: ct.numbers});
-const ds = scoreDisappearingStreets(vals); add("Disappearing Streets (Comp Builder)", ds.score, ds.why, {numbers: ds.numbers});
-// Sort by score for display
+  // Sort by score for display
   plays.sort((a,b)=>b.score-a.score);
   const top3 = plays.slice(0,3);
 
@@ -1452,6 +1259,96 @@ const ds = scoreDisappearingStreets(vals); add("Disappearing Streets (Comp Build
   return {state, plays: top3, primary};
 }
 
+// --- Extra diagnostics (repeats, Hydra cold4, Dirty Bird stats) ---
+function findRepeatNumbers(spinsChrono, maxGap=5){
+  // returns array of {n, gap} for repeats within maxGap (most recent occurrences)
+  const lastIdx = new Map();
+  const out = [];
+  for(let i=0;i<spinsChrono.length;i++){
+    const v = spinsChrono[i];
+    if(v===0 || v==="00") continue;
+    if(typeof v!=="number") continue;
+    if(lastIdx.has(v)){
+      const gap = i - lastIdx.get(v);
+      if(gap<=maxGap) out.push({n:v, gap});
+    }
+    lastIdx.set(v,i);
+  }
+  // keep latest per number
+  const best = new Map();
+  out.forEach(o=>{ if(!best.has(o.n) || o.gap < best.get(o.n).gap) best.set(o.n,o); });
+  return Array.from(best.values()).sort((a,b)=>a.gap-b.gap || a.n-b.n);
+}
+
+function streetOf(n){ return Math.floor((n-1)/3)+1; } // 1..12
+function findRepeatStreets(spinsChrono, maxGap=3){
+  const lastIdx = new Map();
+  const out = [];
+  for(let i=0;i<spinsChrono.length;i++){
+    const v = spinsChrono[i];
+    if(v===0 || v==="00") continue;
+    if(typeof v!=="number") continue;
+    const st = streetOf(v);
+    if(lastIdx.has(st)){
+      const gap = i - lastIdx.get(st);
+      if(gap<=maxGap) out.push({st, gap});
+    }
+    lastIdx.set(st,i);
+  }
+  const best = new Map();
+  out.forEach(o=>{ if(!best.has(o.st) || o.gap < best.get(o.st).gap) best.set(o.st,o); });
+  return Array.from(best.values()).sort((a,b)=>a.gap-b.gap || a.st-b.st);
+}
+
+function sinceLastGreen(spinsChrono){
+  for(let i=spinsChrono.length-1;i>=0;i--){
+    const v=spinsChrono[i];
+    if(v===0 || v==="00") return spinsChrono.slice(i+1);
+  }
+  return spinsChrono.slice();
+}
+
+function hydraCold4SinceGreen(spinsChrono){
+  const seg = sinceLastGreen(spinsChrono);
+  const counts = {};
+  for(let n=1;n<=36;n++) counts[n]=0;
+  seg.forEach(v=>{ if(typeof v==="number" && v>=1 && v<=36) counts[v]++; });
+  const arr = Object.entries(counts).map(([k,c])=>({n:+k,c}));
+  arr.sort((a,b)=>(a.c-b.c)||(a.n-b.n));
+  const cold4 = arr.slice(0,4);
+  return {len: seg.length, cold4};
+}
+
+// Dirty Bird selection (simplified stats-only: cold-dozen mode, 2 cold numbers excluded)
+function dbcdsStatsLast15NoGreen(spinsChrono){
+  // build last 15 non-green
+  const win=[];
+  for(let i=spinsChrono.length-1;i>=0 && win.length<15;i--){
+    const v=spinsChrono[i];
+    if(v===0 || v==="00") continue;
+    if(typeof v==="number" && v>=1 && v<=36) win.push(v);
+  }
+  win.reverse();
+  if(win.length<15) return {ok:false, need:15, have:win.length};
+  const dzCounts={D1:0,D2:0,D3:0};
+  win.forEach(n=>{ if(n<=12) dzCounts.D1++; else if(n<=24) dzCounts.D2++; else dzCounts.D3++;});
+  const order=["D1","D2","D3"];
+  let cold="D1", min=1e9;
+  order.forEach(d=>{ if(dzCounts[d]<min){min=dzCounts[d]; cold=d;} });
+  const minMax = Math.max(dzCounts.D1,dzCounts.D2,dzCounts.D3)-Math.min(dzCounts.D1,dzCounts.D2,dzCounts.D3);
+  const minNum = cold==="D1"?1:(cold==="D2"?13:25);
+  const maxNum = cold==="D1"?12:(cold==="D2"?24:36);
+  const numCounts={};
+  for(let n=minNum;n<=maxNum;n++) numCounts[n]=0;
+  win.forEach(n=>{ if(n>=minNum && n<=maxNum) numCounts[n]++; });
+  const entries = Object.entries(numCounts).map(([k,c])=>({n:+k,c}));
+  entries.sort((a,b)=>(a.c-b.c)||(a.n-b.n));
+  const excl=[entries[0].n, entries[1].n];
+  const bet=[];
+  for(let n=minNum;n<=maxNum;n++) if(!excl.includes(n)) bet.push(n);
+  return {ok:true, dzCounts, coldDozen:cold, exclude:excl, bet10:bet.slice(0,10), gap:minMax};
+}
+
 function render() {
     $("winLabel").textContent = "Last " + windowN;
     $("spinCount").textContent = String(spins.length);
@@ -1474,27 +1371,33 @@ function render() {
 
     $("lastList").value = spins.slice(0,20).map(x => (x.n==="00"?"00":String(x.n))).join(", ");
 
-    let scored = null;
-    const history = spins.slice().reverse().map(s=> (s.n==='00'?99:s.n));
-    scored = scoreStrategies(recent, history);
-
-    // ---- Table state / repeats / hydra cold ----
-  try{
-    const ts = computeTableState(history, 15);
-    $("tableState").textContent = ts;
-    $("tableStateDetail").textContent = "";
-    const rep = repeatNumberInfo(history, 20);
-    $("repeatsInfo").textContent = rep ? `Repeats (20): ${rep}` : "";
-    const srep = repeatStreetInfo(history, 20);
-    $("streetRepeatsInfo").textContent = srep ? `Streets (20): ${srep}` : "";
-    const cold4 = computeHydraColdNumbers(history);
-    $("hydraCold4").textContent = cold4 && cold4.length ? `Hydra cold 4: ${cold4.map(x=>`${x.n===99?"00":x.n}(${x.age})`).join(" • ")}` : "";
-    $("sinceGreen").textContent = `Since green: ${computeSinceGreen(history)}`;
-  }catch(e){}
-$("recommend").textContent = `${scored.primary.mode} — ${scored.primary.name}`;
+    const scored = scoreStrategies(recent);
+    $("recommend").textContent = `${scored.primary.mode} — ${scored.primary.name}`;
     $("reason").textContent = scored.primary.why || "—";
     $("state").textContent = scored.state;
     $("state2").textContent = `Window: last ${windowN} • Session: ${sessionId}`;
+    // Extra diagnostics
+    const repNums = findRepeatNumbers(recent, 5);
+    $("repNums").textContent = repNums.length ? repNums.map(o=>`${o.n} (gap ${o.gap})`).join(", ") : "—";
+    $("repNums2").textContent = repNums.length ? `count: ${repNums.length}` : "—";
+
+    const repSt = findRepeatStreets(recent, 3);
+    $("repStreets").textContent = repSt.length ? repSt.map(o=>`S${o.st} (gap ${o.gap})`).join(", ") : "—";
+    $("repStreets2").textContent = repSt.length ? `count: ${repSt.length}` : "—";
+
+    const hc = hydraCold4SinceGreen(recent);
+    $("hydraCold4").textContent = hc.cold4.map(o=>`${o.n}(${o.c})`).join("  ");
+    $("hydraCold4b").textContent = `spins since green: ${hc.len}`;
+
+    const db = dbcdsStatsLast15NoGreen(recent);
+    if(db.ok){
+      $("dbcds").textContent = `Bet ${db.coldDozen} (cold). Exclude ${db.exclude.join(", ")}.`;
+      $("dbcds2").textContent = `D1:${db.dzCounts.D1} D2:${db.dzCounts.D2} D3:${db.dzCounts.D3} • gap ${db.gap}`;
+    }else{
+      $("dbcds").textContent = `Need 15 non‑green; have ${db.have}`;
+      $("dbcds2").textContent = "—";
+    }
+
 
     // Top plays cards
     const topPlays = $("topPlays");
@@ -1746,113 +1649,6 @@ $("recommend").textContent = `${scored.primary.mode} — ${scored.primary.name}`
   }
 render();
 });
-
-  function streetKey(n){
-    // streets are 1-3,4-6,...,34-36; return like "1-3"
-    if(n===0||n===99) return null;
-    const start = Math.floor((n-1)/3)*3 + 1;
-    return `${start}-${start+2}`;
-  }
-
-  function repeatNumberInfo(history, N=20){
-    const w = history.slice(-N);
-    const counts = new Map();
-    for(const x of w){ counts.set(x, (counts.get(x)||0)+1); }
-    const reps = [...counts.entries()].filter(([n,c])=>c>=2).sort((a,b)=>b[1]-a[1] || a[0]-b[0]);
-    if(!reps.length) return "";
-    return reps.slice(0,6).map(([n,c])=>`${n===99?"00":n}×${c}`).join(" • ");
-  }
-
-  function repeatStreetInfo(history, N=20){
-    const w = history.slice(-N);
-    const counts = new Map();
-    for(const x of w){
-      const k = streetKey(x);
-      if(!k) continue;
-      counts.set(k, (counts.get(k)||0)+1);
-    }
-    const reps = [...counts.entries()].filter(([k,c])=>c>=3).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0]));
-    if(!reps.length) return "";
-    return reps.slice(0,4).map(([k,c])=>`${k}×${c}`).join(" • ");
-  }
-
-  function computeHydraColdNumbers(history){
-    // "age" = spins since last appearance (0 means just hit on latest spin)
-    const all = [];
-    const maxN = 37; // 0-36 plus 00(99)
-    const lastIdx = new Map();
-    for(let i=0;i<history.length;i++){
-      lastIdx.set(history[i], i);
-    }
-    const L = history.length;
-    const nums = [];
-    for(let n=0;n<=36;n++) nums.push(n);
-    nums.push(99);
-    for(const n of nums){
-      const idx = lastIdx.has(n)? lastIdx.get(n) : -1;
-      const age = idx===-1 ? L : (L-1-idx);
-      all.push({n, age});
-    }
-    all.sort((a,b)=>b.age-a.age || (a.n===99?37:a.n)-(b.n===99?37:b.n));
-    return all.slice(0,4);
-  }
-
-  function computeSinceGreen(history){
-    // count spins since last 0/00
-    for(let i=history.length-1, age=0; i>=0; i--, age++){
-      if(history[i]===0 || history[i]===99) return age;
-    }
-    return history.length;
-  }
-
-  function computeTableState(history, N=15){
-    if(history.length < N) return "WARMUP";
-    const w = history.slice(-N);
-    const seen = new Set();
-    let repeatCount = 0;
-    for(const x of w){
-      if(seen.has(x)) repeatCount++;
-      seen.add(x);
-    }
-    const col = {1:0,2:0,3:0};
-    const doz = {1:0,2:0,3:0};
-    for(const x of w){
-      if(x===0||x===99) continue;
-      col[((x-1)%3)+1]++; 
-      doz[Math.floor((x-1)/12)+1]++;
-    }
-    const colGap = Math.max(col[1],col[2],col[3]) - Math.min(col[1],col[2],col[3]);
-    const dozGap = Math.max(doz[1],doz[2],doz[3]) - Math.min(doz[1],doz[2],doz[3]);
-    const structured = (colGap>=3) || (dozGap>=3);
-    const choppy = repeatCount >= 4; // heuristic
-    if(choppy && structured) return "CHOPPY + STRUCTURED";
-    if(structured) return "STRUCTURED";
-    if(choppy) return "CHOPPY";
-    return "FLAT";
-  }
-
 </script>
 </body>
-</html,
-  "CASH — Junko 10 to Win (Quadrant-Gated)": {
-    type: "CASH",
-    title: "Junko 10 to Win (Quadrant-Gated)",
-    bullets: [
-      "Warmup: observe 15 spins, no bets.",
-      "Trigger (last 8): at least one quadrant has 0 hits AND the others are balanced (max-min ≤ 1).",
-      "Bet the missing quadrant with per-number units u = 1,1,2,3,5 then +1 each additional miss.",
-      "Remove any hit number from that quadrant; reset u=1 on a hit."
-    ],
-    howTo: [
-      "Sets (American; 00 encoded as 99):",
-      "GN=(99, 0, 1, 2, 9, 10, 13, 14, 27, 28)",
-      "HO=(24, 25, 26, 29, 30, 33, 34, 35, 36)",
-      "LO=(3, 4, 8, 11, 12, 15, 16, 22, 23)",
-      "M =(5, 6, 7, 17, 18, 19, 20, 21, 31, 32)",
-      "",
-      "When triggered: bet ALL remaining numbers in the missing quadrant at unit u ($ per number).",
-      "Progression: u sequence 1,1,2,3,5; after 5th miss, u = 6,7,8... (+1 each miss).",
-      "On hit: remove that number from the set; reset u=1.",
-      "Exit: cashout +$100; stop-loss -$300; guardrail: no bet if worst-case loss would breach stop-loss."
-    ]
-  }>
+</html>
