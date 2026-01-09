@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • FULL • Build: 2026-01-07 • CASH PRIORITY v13.8</title>
+  <title>Roulette Trend Tracker • FULL • Build: 2026-01-07 • CASH PRIORITY v13.9</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -71,8 +71,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-07 • FULL • CASH PRIORITY v13.8</div>
-    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v13.8</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-07 • FULL • CASH PRIORITY v13.9</div>
+    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v13.9</div>
     <div class="sub">Build date: <b>2026-01-07</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
     <div class="card">
@@ -1449,9 +1449,11 @@ function render() {
 
     $("lastList").value = spins.slice(0,20).map(x => (x.n==="00"?"00":String(x.n))).join(", ");
 
-    const scored = scoreStrategies(recent);
-    
-  // ---- Table state / repeats / hydra cold ----
+    let scored = null;
+    const history = spins.slice().reverse().map(s=> (s.n==='00'?99:s.n));
+    scored = scoreStrategies(recent, history);
+
+    // ---- Table state / repeats / hydra cold ----
   try{
     const ts = computeTableState(history, 15);
     $("tableState").textContent = ts;
