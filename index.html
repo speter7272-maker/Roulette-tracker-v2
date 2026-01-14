@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • FULL • Build: 2026-01-13 • CASH PRIORITY v15.3</title>
+  <title>Roulette Trend Tracker • FULL • Build: 2026-01-13 • CASH PRIORITY v15.3.1.1</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -25,8 +25,12 @@
     textarea{min-height:92px}
     .grid{display:grid;grid-template-columns:1fr;gap:10px}
     @media(min-width:860px){.grid{grid-template-columns:1.1fr .9fr}}
-    .kbd{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
-    .key{padding:12px 8px;border-radius:12px;border:1px solid var(--border);background:#0c1730;color:var(--txt);font-weight:900;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparenttouch-action:manipulation;
+    .kbd{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;position:relative;z-index:5;}
+    /* KEYPAD_SAFETY */
+    #kbd, #kbd *{pointer-events:auto;}
+    #kbd{touch-action:manipulation;}
+
+    .key{padding:12px 8px;border-radius:12px;border:1px solid var(--border);background:#0c1730;color:var(--txt);font-weight:900;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
     }
     .key.green{background:rgba(16,185,129,.16);border-color:rgba(16,185,129,.35)}
     .key.zero{background:rgba(245,158,11,.16);border-color:rgba(245,158,11,.35)}
@@ -72,8 +76,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3</div>
-    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3.1.1</div>
+    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3.1.1</div>
     <div class="sub">Build date: <b>2026-01-09</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
     <div class="card">
@@ -244,6 +248,8 @@
     </div>
   </div>
 <script>
+
+  console.log("Roulette Tracker BUILD v15.3.1 (scoreTrinity fix)");
 
   // DOM helpers
   const $ = (id) => document.getElementById(id);
@@ -898,6 +904,8 @@ Session targets (tested)
 
       // Most reliable: direct property handlers (less iOS weirdness than addEventListener)
       b.onclick = (e) => { if(e) e.preventDefault(); fire(k); };
+      b.onpointerup = (e) => { if(e){ try{e.preventDefault();}catch(_){} } fire(k); };
+      b.ontouchstart = (e) => { if(e){ try{e.preventDefault();}catch(_){} } };
       b.ontouchend = (e) => { if(e){ e.preventDefault(); e.stopPropagation(); } fire(k); };
 
       kbd.appendChild(b);
@@ -1495,7 +1503,7 @@ function scoreSlowSteady(vals){
 
 
 /* ============================================================
-   BET PACK STRATEGIES (v15.3)
+   BET PACK STRATEGIES (v15.3.1.1)
    - Dirty Bird DB-CDS (Cash + Comp)
    - WB-RTB
    - SYSTEM_DB_WB selector
@@ -1768,6 +1776,11 @@ function scoreTrinityV2(vals){
   };
 }
 
+// Compatibility alias: older scorer name used by registry
+function scoreTrinity(vals){
+  return scoreTrinityV2(vals);
+}
+
 function scoreStrategies(vals) {
   const plays = [];
   const add = (name, score, why, extra={}) => plays.push({name, score, why, ...extra});
@@ -1941,6 +1954,7 @@ function dbcdsStatsLast15NoGreen(spinsChrono){
 }
 
 function render() {
+  try {
     $("winLabel").textContent = "Last " + windowN;
     $("spinCount").textContent = String(spins.length);
     $("sessionCount").textContent = String(spins.filter(x => x.s===sessionId).length);
@@ -2058,7 +2072,13 @@ function render() {
       pb.onclick = null;
     }
   
-    // Rebuild keypad after every render (render() replaces the DOM and can wipe it)
+    
+  } catch(e) {
+    console.error('Render error', e);
+    try { const rr = $("reason"); if (rr) rr.textContent = 'Render error: ' + (e && (e.message || e.toString()) || e); } catch(_) {}
+    try { const rc = $("recommend"); if (rc && rc.textContent === 'Sit out') rc.textContent = 'Render error'; } catch(_) {}
+  }
+// Rebuild keypad after every render (render() replaces the DOM and can wipe it)
     try { buildKeypad(); } catch(e) { console.warn('Keypad build failed', e); }
 }
 
