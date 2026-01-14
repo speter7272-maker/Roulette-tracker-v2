@@ -859,23 +859,43 @@ Session targets (tested)
     return spins.slice(0, windowN).map(x => x.n);
   }
 
+  let __kpLastTap = 0;
+
   function buildKeypad() {
     const kbd = $("kbd");
+    if (!kbd) return;
+
     const keys = ["00",0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36];
     kbd.innerHTML = "";
+
+    const fire = (k) => {
+      const now = Date.now();
+      // Debounce to avoid double-fire from multiple event types on iOS
+      if (now - __kpLastTap < 250) return;
+      __kpLastTap = now;
+      addSpin(k);
+    };
+
     keys.forEach(k => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "key";
-      if(k==="00") b.className += " zero";
-      if(k===0) b.className += " green";
+      if (k === "00") b.className += " zero";
+      if (k === 0) b.className += " green";
       b.textContent = String(k);
-      // pointer + click (iOS Safari safe)
-      b.addEventListener("click", () => addSpin(k), {passive:true});
-      b.addEventListener("touchend", (e) => { e.preventDefault(); addSpin(k); }, {passive:false});
+
+      // Robust mobile input: pointerup (preferred) + click fallback.
+      // Keep handlers simple and identical; debounce prevents duplicates.
+      b.addEventListener("pointerup", (e) => { e.preventDefault(); fire(k); }, {passive:false});
+      b.addEventListener("click", (e) => { e.preventDefault(); fire(k); }, {passive:false});
+
+      // Older iOS fallback (rare): touchend
+      b.addEventListener("touchend", (e) => { e.preventDefault(); fire(k); }, {passive:false});
+
       kbd.appendChild(b);
     });
   }
+
 
   function addSpin(val) {
     const k = numToKey(val);
