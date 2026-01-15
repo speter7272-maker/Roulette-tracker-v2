@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • FULL • Build: 2026-01-13 • CASH PRIORITY v15.3</title>
+  <title>Roulette Trend Tracker • FULL • Build: 2026-01-13 • CASH PRIORITY v15.3.1 LOCKED.1.1</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -76,8 +76,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3</div>
-    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3.1 LOCKED.1.1</div>
+    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3.1 LOCKED.1.1</div>
     <div class="sub">Build date: <b>2026-01-09</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
     <div class="card">
@@ -248,6 +248,8 @@
     </div>
   </div>
 <script>
+
+  console.log("Roulette Tracker BUILD v15.3.1 LOCKED (scoreTrinity fix)");
 
   // DOM helpers
   const $ = (id) => document.getElementById(id);
@@ -863,6 +865,8 @@ Session targets (tested)
   function windowValues() {
     return spins.slice(0, windowN).map(x => x.n);
   }
+
+  /* === KEYPAD MODULE (LOCKED) — DO NOT EDIT === */
 
   function buildKeypad() {
     const kbd = $("kbd");
@@ -1501,7 +1505,7 @@ function scoreSlowSteady(vals){
 
 
 /* ============================================================
-   BET PACK STRATEGIES (v15.3)
+   BET PACK STRATEGIES (v15.3.1.1)
    - Dirty Bird DB-CDS (Cash + Comp)
    - WB-RTB
    - SYSTEM_DB_WB selector
@@ -1774,29 +1778,57 @@ function scoreTrinityV2(vals){
   };
 }
 
+// Compatibility alias: older scorer name used by registry
+function scoreTrinity(vals){
+  return scoreTrinityV2(vals);
+}
+
 function scoreStrategies(vals) {
   const plays = [];
   const add = (name, score, why, extra={}) => plays.push({name, score, why, ...extra});
 
+  // Fail-safe: a broken strategy must never crash render/keypad.
+  const safe = (name, fn) => {
+    try { return fn(); }
+    catch(e){
+      const msg = (e && e.message) ? e.message : String(e);
+      add(name, 0, `ERROR: ${msg}`, {error:true});
+      return null;
+    }
+  };
+
+
   // Base COMP always present
-      const vs = scoreVegasSpecial(vals);
-  add("CASH — Vegas Special C2–C3 Splits (L1–L3)", vs.score, vs.why, {bets: vs.bets});
+      const vs = safe("CASH — Vegas Special C2–C3 Splits (L1–L3)", () => scoreVegasSpecial(vals));
+  if(vs) add("CASH — Vegas Special C2–C3 Splits (L1–L3)", vs.score, vs.why, {bets: vs.bets});
   add("6 Diamonds + 0/00 (Primary)", 70, "Default COMP coverage / survivability.");
 
-  const md = scoreMoonDance(vals); add("Moon Dance 2S/Dozen (Junko Base)", md.score, md.why, {numbers: md.numbers});
-  const tr = scoreTrinity(vals); add("Trinity–Junko v2", tr.score, tr.why, {numbers: tr.numbers});
-  const os = scoreOppSeg(vals); add("Opposite-Segment Contrarian (Option 1)", os.score, os.why, {numbers: os.numbers});
-  const ftl = scoreFTL(vals); add("Corners + Double Streets (Follow the Leader)", ftl.score, ftl.why, {numbers: ftl.numbers, block: ftl.block});
-  const jh = scoreJunkoHot(vals); add("Junko Hot (Quadrant Momentum)", jh.score, jh.why);
-  const ss = scoreSlowSteady(vals); add("Slow & Steady (Structural Bias)", ss.score, ss.why);
+  const md = safe("Moon Dance 2S/Dozen (Junko Base)", () => scoreMoonDance(vals));
+  if(md) add("Moon Dance 2S/Dozen (Junko Base)", md.score, md.why, {numbers: md.numbers});
+  const tr = safe("Trinity–Junko v2", () => scoreTrinity(vals));
+  if(tr) add("Trinity–Junko v2", tr.score, tr.why, {numbers: tr.numbers});
+  const os = safe("Opposite-Segment Contrarian (Option 1)", () => scoreOppSeg(vals));
+  if(os) add("Opposite-Segment Contrarian (Option 1)", os.score, os.why, {numbers: os.numbers});
+  const ftl = safe("Corners + Double Streets (Follow the Leader)", () => scoreFTL(vals));
+  if(ftl) add("Corners + Double Streets (Follow the Leader)", ftl.score, ftl.why, {numbers: ftl.numbers, block: ftl.block});
+  const jh = safe("Junko Hot (Quadrant Momentum)", () => scoreJunkoHot(vals));
+  if(jh) add("Junko Hot (Quadrant Momentum)", jh.score, jh.why);
+  const ss = safe("Slow & Steady (Structural Bias)", () => scoreSlowSteady(vals));
+  if(ss) add("Slow & Steady (Structural Bias)", ss.score, ss.why);
 
   // BET PACK additions
-  const dbCash = scoreDBCDS(vals,"cash"); add("Dirty Bird — Cold Dozen Switch (DB-CDS) [Cash]", dbCash.score, dbCash.why, {bets: dbCash.picks, betText: dbCash.betText});
-  const dbComp = scoreDBCDS(vals,"comp"); add("Dirty Bird — Cold Dozen Switch (DB-CDS) [Comp]", dbComp.score-2, dbComp.why, {bets: dbComp.picks, betText: dbComp.betText});
-  const wb = scoreWBRTB(vals); add("WB-RTB", wb.score, wb.why, {bets: wb.picks, betText: wb.betText});
-  const sys = scoreSystemDBWB(vals); add("SYSTEM — Dirty Bird + WB-RTB", sys.score, sys.why, {bets: sys.picks, betText: sys.betText});
-  const es = scoreEasyStreetA(vals); add("Easy Street — Cold Side (Option A′ Late Straights)", es.score, es.why, {bets: es.picks, betText: es.betText});
-  const tv2 = scoreTrinityV2(vals); add("Trinity v2 (Independent Modules)", tv2.score, tv2.why, {bets: tv2.picks, betText: tv2.betText});
+  const dbCash = safe("Dirty Bird — Cold Dozen Switch (DB-CDS) [Cash]", () => scoreDBCDS(vals,"cash"));
+  if(dbCash) add("Dirty Bird — Cold Dozen Switch (DB-CDS) [Cash]", dbCash.score, dbCash.why, {bets: dbCash.picks, betText: dbCash.betText});
+  const dbComp = safe("Dirty Bird — Cold Dozen Switch (DB-CDS) [Comp]", () => scoreDBCDS(vals,"comp"));
+  if(dbComp) add("Dirty Bird — Cold Dozen Switch (DB-CDS) [Comp]", dbComp.score-2, dbComp.why, {bets: dbComp.picks, betText: dbComp.betText});
+  const wb = safe("WB-RTB", () => scoreWBRTB(vals));
+  if(wb) add("WB-RTB", wb.score, wb.why, {bets: wb.picks, betText: wb.betText});
+  const sys = safe("SYSTEM — Dirty Bird + WB-RTB", () => scoreSystemDBWB(vals));
+  if(sys) add("SYSTEM — Dirty Bird + WB-RTB", sys.score, sys.why, {bets: sys.picks, betText: sys.betText});
+  const es = safe("Easy Street — Cold Side (Option A′ Late Straights)", () => scoreEasyStreetA(vals));
+  if(es) add("Easy Street — Cold Side (Option A′ Late Straights)", es.score, es.why, {bets: es.picks, betText: es.betText});
+  const tv2 = safe("Trinity v2 (Independent Modules)", () => scoreTrinityV2(vals));
+  if(tv2) add("Trinity v2 (Independent Modules)", tv2.score, tv2.why, {bets: tv2.picks, betText: tv2.betText});
 
 
 
@@ -1945,6 +1977,8 @@ function dbcdsStatsLast15NoGreen(spinsChrono){
   for(let n=minNum;n<=maxNum;n++) if(!excl.includes(n)) bet.push(n);
   return {ok:true, dzCounts, coldDozen:cold, exclude:excl, bet10:bet.slice(0,10), gap:minMax};
 }
+
+/* === RENDER LOOP (LOCKED) — DO NOT EDIT === */
 
 function render() {
   try {
@@ -2289,6 +2323,52 @@ function render() {
   }
 render();
 });
+
+/* === WHEEL WAVE TRACKER (SAFE ADD-ON) === */
+function createWheelWaveTracker({ band = 3 } = {}) {
+  const spins = [];
+  function analyze(n) {
+    if (spins.length < n) return null;
+    const win = spins.slice(-n);
+    let same = 0, opp = 0;
+    for (let i = 1; i < win.length; i++) {
+      if (Math.abs(win[i] - win[i-1]) <= band) same++;
+      else opp++;
+    }
+    const total = same + opp || 1;
+    return {
+      state: same > opp ? "SAME" : (opp > same ? "OPP" : "NEUTRAL"),
+      sameRate: +(same / total).toFixed(2),
+      oppRate: +(opp / total).toFixed(2)
+    };
+  }
+  return {
+    pushSpin(v) {
+      if (typeof v !== "number" || v < 0 || v > 36) return { error: "Invalid spin" };
+      spins.push(v);
+      return { seg10: analyze(10), seg15: analyze(15) };
+    }
+  };
+}
+const wheelWave = createWheelWaveTracker({ band: 3 });
+
+/* === WHEEL WAVE HOOK === */
+const __origAddSpin = addSpin;
+addSpin = function(val){
+  __origAddSpin(val);
+  if(typeof val === "number"){
+    const out = wheelWave.pushSpin(val);
+    if(out.seg10){
+      document.getElementById("wave10").textContent =
+        out.seg10.state + " | same " + out.seg10.sameRate + " / opp " + out.seg10.oppRate;
+    }
+    if(out.seg15){
+      document.getElementById("wave15").textContent =
+        out.seg15.state + " | same " + out.seg15.sameRate + " / opp " + out.seg15.oppRate;
+    }
+  }
+};
+
 </script>
 </body>
 </html>
