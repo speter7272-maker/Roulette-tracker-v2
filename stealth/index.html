@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • FULL • CASH PRIORITY v15.3.2 LOCKED.1.14</title>
+  <title>Roulette Trend Tracker • FULL • CASH PRIORITY v15.3.2 LOCKED.1.16</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -76,8 +76,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3.2 LOCKED.1.14</div>
-    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3.2 LOCKED.1.14</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3.2 LOCKED.1.16</div>
+    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3.2 LOCKED.1.16</div>
     <div class="sub">Build date: <b>2026-01-09</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
     <div class="card">
@@ -408,24 +408,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if(jb==="HO") c.ho++;
       if(jb==="LO") c.lo++;
       if(jb==="M") c.m++;
-    }
-
-function junkoAges(vals) {
-  // vals expected newest -> oldest
-  const ages = { gn: 999, ho: 999, lo: 999, m: 999 };
-  for (let i = 0; i < vals.length; i++) {
-    const b = junkoBucket(vals[i]);
-    if (!b) continue;
-    if (b === "GN" && ages.gn === 999) ages.gn = i;
-    else if (b === "HO" && ages.ho === 999) ages.ho = i;
-    else if (b === "LO" && ages.lo === 999) ages.lo = i;
-    else if (b === "M" && ages.m === 999) ages.m = i;
-    if (ages.gn !== 999 && ages.ho !== 999 && ages.lo !== 999 && ages.m !== 999) break;
-  }
-  return ages;
-}
-);
+    });
     return c;
+  }
+
+  // Spins since last Junko quadrant hit (0 = hit on most recent spin)
+  // If a quadrant never appears in the current window, value stays 999.
+  function junkoAges(vals){
+    // vals expected newest-first
+    const out = {gn:999, ho:999, lo:999, m:999};
+    for (let i = 0; i < vals.length; i++) {
+      const jb = junkoBucket(vals[i]);
+      if (jb === "GN" && out.gn === 999) out.gn = i;
+      else if (jb === "HO" && out.ho === 999) out.ho = i;
+      else if (jb === "LO" && out.lo === 999) out.lo = i;
+      else if (jb === "M"  && out.m  === 999) out.m  = i;
+      if (out.gn !== 999 && out.ho !== 999 && out.lo !== 999 && out.m !== 999) break;
+    }
+    return out;
   }
 
   function repeatNumberInfo(vals, lookback) {
@@ -2203,9 +2203,9 @@ function render() {
     $("rb").textContent   = `${cts.red} / ${cts.black}`;
     $("hl").textContent   = `${cts.high} / ${cts.low}`;
     $("eo").textContent   = `${cts.even} / ${cts.odd}`;
-    const ages = junkoAges(vals);
-    const fmtAge = (x) => (x === 999 ? "—" : String(x));
-    $("junko").textContent = `GN ${cts.gn} (${fmtAge(ages.gn)}) | HO ${cts.ho} (${fmtAge(ages.ho)}) | LO ${cts.lo} (${fmtAge(ages.lo)}) | M ${cts.m} (${fmtAge(ages.m)})`;
+        const jAges = junkoAges(recent);
+    const fmtAge = (a) => (a === 999 ? (recent.length + "+") : String(a));
+    $("junko").textContent = "GN " + cts.gn + " (" + fmtAge(jAges.gn) + ") | HO " + cts.ho + " (" + fmtAge(jAges.ho) + ") | LO " + cts.lo + " (" + fmtAge(jAges.lo) + ") | M " + cts.m + " (" + fmtAge(jAges.m) + ")";
 
     $("lastList").value = spins.slice(0,20).map(x => (x.n==="00"?"00":String(x.n))).join(", ");
 
