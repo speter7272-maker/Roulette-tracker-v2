@@ -2235,25 +2235,29 @@ function soldiersStatsLast15(recentNewestFirst){
    - Optional Freeze/Active toggle; auto-resets after 2 distinct frozen hits
    ========================================================= */
 
-// Standard 22 corners on the layout (1..36)
-const CORNERS = (() => {
-  const out = [];
-  for (let r = 1; r <= 11; r++) {
-    for (let c = 1; c <= 2; c++) {
-      const n = 3 * (r - 1) + c;
-      out.push([n, n + 1, n + 3, n + 4]);
-    }
-  }
-  const seen = new Set();
-  return out
-    .map(a => a.slice().sort((x,y)=>x-y))
-    .filter(a => {
-      const k = a.join(",");
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-})();
+// Non-overlapping corner *set* (12 corners only)
+// Corners available: 1/5, 7/11, 13/17, 19/23, 25/29, 31/35, 2/6, 8/12, 14/18, 20/24, 26/30, 32/36
+// Note: the *displayed* Top-5 is additionally filtered to be non-overlapping (no shared numbers).
+const CORNERS = [
+  [1, 2, 4, 5],
+  [7, 8, 10, 11],
+  [13, 14, 16, 17],
+  [19, 20, 22, 23],
+  [25, 26, 28, 29],
+  [31, 32, 34, 35],
+  [2, 3, 5, 6],
+  [8, 9, 11, 12],
+  [14, 15, 17, 18],
+  [20, 21, 23, 24],
+  [26, 27, 29, 30],
+  [32, 33, 35, 36],
+].map(a => a.slice().sort((x, y) => x - y));
+
+function cornersOverlap(aNums, bNums) {
+  const s = new Set(aNums);
+  for (const n of bNums) if (s.has(n)) return true;
+  return false;
+}
 
 function cornerId(nums){
   return nums.slice().sort((a,b)=>a-b).join(",");
@@ -2276,79 +2280,76 @@ function cornerAgeToFlag(age){
   return "GREEN";
 }
 function cornerSetFlag(top5){
+  if (!top5 || top5.length === 0) return "GREEN";
   const maxAge = Math.max(...top5.map(c => (c.since==null ? 999999 : c.since)));
   return cornerAgeToFlag(maxAge);
 }
 
+function computeRunningDriest5(spinsInSession){
+  // Running totals, then choose TOP-5 driest *non-overlapping* corners.
+  // Sorting: lowest hit-count first; tiebreaker: larger "since" (older last hit) first.
+  const counts = new Map();
+  const lastHitIdx = new Map(); // cornerId -> last hit spin index in session
 
-    function computeRunningDriest5(spinsInSession){
-    // Running totals (session-to-date) for each corner + spins-since-last-hit.
-    // Then select 5 *non-overlapping* corners (no shared numbers), driest first.
-    const counts = new Map();
-    const lastHitIdx = new Map(); // last hit spin index within session
+  for (const c of CORNERS) counts.set(cornerId(c), 0);
 
-    for (const c of CORNERS) counts.set(cornerId(c), 0);
-
-    for (let i=0;i<spinsInSession.length;i++){
-      const s = spinsInSession[i];
-      if (s===0 || s===99) continue; // greens never hit corners
-      for (const corner of CORNERS){
-        if (corner.includes(s)){
-          const id = cornerId(corner);
-          counts.set(id, (counts.get(id)||0) + 1);
-          lastHitIdx.set(id, i);
-        }
+  for (let i = 0; i < spinsInSession.length; i++){
+    const s = spinsInSession[i];
+    if (s === 0 || s === 99) continue; // greens never hit corners
+    for (const corner of CORNERS){
+      if (corner.includes(s)){
+        const id = cornerId(corner);
+        counts.set(id, (counts.get(id) || 0) + 1);
+        lastHitIdx.set(id, i);
       }
     }
-
-    const nowIdx = spinsInSession.length - 1;
-
-    const stats = CORNERS.map((corner)=>{
-      const id = cornerId(corner);
-      const label = cornerShortLabel(corner);
-      const cnt = counts.get(id) || 0;
-      const lh = lastHitIdx.get(id);
-      const since = (lh==null) ? null : (nowIdx - lh);
-      const flag = cornerAgeToFlag(since);
-      return {
-        id,
-        label,
-        nums: corner,
-        count: cnt,
-        since,
-        flag,
-        display: `${label} (${since==null ? "NA" : since})`,
-      };
-    });
-
-    // Driest ordering:
-    // 1) lowest hit-count first
-    // 2) tiebreaker: higher "since" first (older last hit)
-    stats.sort((a,b)=>{
-      if (a.count!==b.count) return a.count - b.count;
-      const aSince = (a.since==null) ? 999999 : a.since;
-      const bSince = (b.since==null) ? 999999 : b.since;
-      return bSince - aSince;
-    });
-
-    // Pick 5 corners that do not overlap (no shared numbers).
-    const picked = [];
-    const usedNums = new Set();
-    for (const c of stats){
-      if (picked.length>=5) break;
-      let overlap = false;
-      for (const n of c.nums){
-        if (usedNums.has(n)){ overlap = true; break; }
-      }
-      if (overlap) continue;
-      picked.push(c);
-      for (const n of c.nums) usedNums.add(n);
-    }
-
-    const top5 = picked;
-    const line = top5.map(c=>c.display).join(" / ");
-    return { top5, line, setFlag: cornerSetFlag(top5) };
   }
+
+  const nowIdx = spinsInSession.length - 1;
+
+  const stats = CORNERS.map((corner)=>{
+    const id = cornerId(corner);
+    const label = cornerShortLabel(corner);
+    const cnt = counts.get(id) || 0;
+    const lh = lastHitIdx.get(id);
+    // If never hit this session, treat as "very dry": since = spinsInSession.length (not "NA")
+    const since = (lh == null) ? spinsInSession.length : (nowIdx - lh);
+    const flag = ageToFlag(since);
+    return {
+      id,
+      label,
+      nums: corner,
+      count: cnt,
+      since,
+      flag,
+      display: `${label} (${since})`,
+    };
+  });
+
+  stats.sort((a,b)=>{
+    if (a.count !== b.count) return a.count - b.count;        // driest = lowest count
+    return b.since - a.since;                                  // older last hit first
+  });
+
+  // Non-overlap greedy pick: walk driest→wettest and keep corners that share no numbers.
+  const chosen = [];
+  const usedNums = new Set();
+  for (const c of stats){
+    let overlaps = false;
+    for (const n of c.nums){
+      if (usedNums.has(n)){ overlaps = true; break; }
+    }
+    if (overlaps) continue;
+    chosen.push(c);
+    for (const n of c.nums) usedNums.add(n);
+    if (chosen.length >= 5) break;
+  }
+
+  // Display ONLY non-overlapping corners. If fewer than 5 are available, show fewer.
+  const top5 = chosen;
+  const line = top5.length ? top5.map((c)=>c.display).join(" / ") : "—";
+  return { top5, line, setFlag: setFlagFromTop5(top5) };
+}
 
 function initCornerFreeze(){
   return { isActive:false, frozen:[], hitCount:0, hitIds:{} };
