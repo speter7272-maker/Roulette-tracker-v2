@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • FULL • CASH PRIORITY v15.3.2 LOCKED.1.24</title>
+  <title>Roulette Trend Tracker • FULL • CASH PRIORITY v15.3.2 LOCKED.1.25</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -76,8 +76,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3.2 LOCKED.1.24</div>
-    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3.2 LOCKED.1.24</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3.2 LOCKED.1.25</div>
+    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3.2 LOCKED.1.25</div>
     <div class="sub">Build date: <b>2026-01-09</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
     <div class="card">
@@ -194,8 +194,7 @@
 
           <div class="box">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-              <div class="k">Driest 5 Corners (running)</div>
-              <button class="btn small" id="corners5Toggle">Activate</button>
+              <div class="k">Driest 5 Corners (live)</div>
             </div>
             <div class="v mono" id="corners5">—</div>
             <div class="k" id="corners5b">—</div>
@@ -948,168 +947,7 @@ Tracker UI
     openExplain(name, body);
   }
 
-  function save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        spins, windowN, sessionId, casino: $("casinoInput").value || ""
-      }));
-    } catch(_) {}
-  }
-
-  function load() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return;
-      const obj = JSON.parse(raw);
-      if(Array.isArray(obj.spins)) {
-        spins = obj.spins.map(x => {
-          if(!x) return null;
-          if(typeof x === "string" || typeof x === "number") return {n:numToKey(x), t:Date.now(), s:1};
-          return {n:numToKey(x.n), t:Number(x.t)||Date.now(), s:Number(x.s)||1};
-        }).filter(x => x && x.n!==null);
-      }
-      if([10,15,20].includes(obj.windowN)) windowN = obj.windowN;
-      if(Number.isFinite(obj.sessionId)) sessionId = Number(obj.sessionId);
-      if(typeof obj.casino === "string") $("casinoInput").value = obj.casino;
-    } catch(_) {}
-  }
-
-  function windowValues() {
-    return spins.slice(0, windowN).map(x => x.n);
-  }
-
-  /* === KEYPAD MODULE (LOCKED) — DO NOT EDIT === */
-
-  function buildKeypad() {
-    const kbd = $("kbd");
-    if (!kbd) return;
-
-    // Debug counter (visible on-page)
-    if (!window.__kpCount) window.__kpCount = 0;
-
-    const keys = ["00",0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36];
-    kbd.innerHTML = "";
-
-    const fire = (k) => {
-      // Prevent accidental double-fire on iOS (click after touch)
-      const now = Date.now();
-      if (!window.__kpLastTap) window.__kpLastTap = 0;
-      if (now - window.__kpLastTap < 300) return;
-      window.__kpLastTap = now;
-
-      window.__kpCount += 1;
-      const dbg = $("kpDebug");
-      if (dbg) dbg.textContent = "Keypad taps: " + window.__kpCount;
-
-      addSpin(k);
-    };
-
-    keys.forEach(k => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "key";
-      b.style.touchAction = "manipulation";  // iOS: favor taps
-      b.style.webkitTouchCallout = "none";
-      b.style.webkitUserSelect = "none";
-
-      if (k === "00") b.className += " zero";
-      if (k === 0) b.className += " green";
-      b.textContent = String(k);
-
-      // Most reliable: direct property handlers (less iOS weirdness than addEventListener)
-      b.onclick = (e) => { if(e) e.preventDefault(); fire(k); };
-      b.onpointerup = (e) => { if(e){ try{e.preventDefault();}catch(_){} } fire(k); };
-      b.ontouchstart = (e) => { if(e){ try{e.preventDefault();}catch(_){} } };
-      b.ontouchend = (e) => { if(e){ e.preventDefault(); e.stopPropagation(); } fire(k); };
-
-      kbd.appendChild(b);
-    });
-
-    // Container-level fallback (in case a browser drops per-button handlers)
-    if (!kbd.__delegated) {
-      kbd.__delegated = true;
-      kbd.addEventListener("click", (e) => {
-        const t = e.target;
-        if (!t || !t.classList || !t.classList.contains("key")) return;
-        const raw = (t.textContent || "").trim();
-        if (!raw) return;
-        fire(raw === "00" ? "00" : Number(raw));
-      }, {capture:true});
-    }
-  }
-
-
-  function addSpin(val) {
-    const k = numToKey(val);
-    if (k===null) return;
-
-    // Settle any pending hedge bet (it was placed for THIS spin)
-    if (gsah.pending) {
-      const hitGreen = isGreen(k);
-      const uBet = Number.isFinite(gsah.pendingU) ? gsah.pendingU : (Number.isFinite(gsah.u) ? gsah.u : 1);
-
-      if (hitGreen) {
-        // +17u net on split hit
-        gsah.pnlU += (17 * uBet);
-        gsah.u = 1;
-        gsah.lossCount = 0;
-        gsah.betSpins = 0;
-        gsah.state = "OFF";
-        gsah.cooldown = false;
-        gsah.offReason = "Green hit — reset";
-        gdc = 0;
-      } else {
-        gsah.pnlU += (-1 * uBet);
-        gsah.lossCount += 1;
-        gsah.betSpins += 1;
-
-        // 1/4 linear progression
-        if (gsah.lossCount % 4 === 0) {
-          gsah.u = Math.min(6, (Number.isFinite(gsah.u) ? gsah.u : 1) + 1);
-        }
-
-        // Safety budget
-        if (gsah.pnlU <= -12) {
-          gsah.state = "OFF";
-          gsah.cooldown = true;
-          gsah.offReason = "Safety budget hit (≤ −12u)";
-        }
-
-        // Time cap: 15 hedge bet-spins without green hit
-        if (gsah.state !== "OFF" && gsah.betSpins >= 15) {
-          gsah.state = "OFF";
-          gsah.cooldown = true;
-          gsah.offReason = "15 hedge bets w/o green";
-        }
-
-        // Cap rule: if at u=6 and completed another full 4-loss cycle, turn off
-        if (gsah.state !== "OFF" && gsah.u >= 6 && (gsah.lossCount % 4 === 0)) {
-          gsah.state = "OFF";
-          gsah.cooldown = true;
-          gsah.offReason = "U6 full loss cycle";
-        }
-      }
-
-      gsah.pending = false;
-    }
-
-    // Update green drought counter (if not already reset by hedge win)
-    if (isGreen(k)) {
-      gdc = 0;
-      gsah.cooldown = false;
-    } else {
-      gdc = (Number.isFinite(gdc) ? gdc : 0) + 1;
-    }
-
-    spins.unshift({ n:k, t:Date.now(), s:sessionId });
-
-    // Driest 5 Corners: update freeze state on each new spin (session-based)
-    try {
-      const nn = (k === "00") ? 99 : Number(k);
-      if (Number.isFinite(nn)) {
-        cornerFreeze = updateCornerFreezeOnSpin(cornerFreeze, nn).next;
-      }
-    } catch(e) {}
+  function save() { 
     if (spins.length > 5000) spins = spins.slice(0, 5000);
     save();
     render();
@@ -1126,14 +964,12 @@ Tracker UI
     if(!confirm("Clear all spins?")) return;
     spins = [];
     sessionId = 1;
-    cornerFreeze = initCornerFreezeState();
     save();
     render();
   }
 
   function newSession() {
     sessionId += 1;
-    cornerFreeze = initCornerFreezeState();
       gdc = 0;
       gsah = { ...gsah, state:"OFF", cooldown:false, u:1, lossCount:0, betSpins:0, pnlU:0, pending:false, pendingU:1, offReason:"" };
     save();
@@ -2261,19 +2097,21 @@ function cornerHit(nums, spin){
   // ================================
 
   const NON_OVERLAP_CORNERS_12 = [
-    { id: "1/5",   nums: [1,2,4,5] },
-    { id: "7/11",  nums: [7,8,10,11] },
-    { id: "13/17", nums: [13,14,16,17] },
-    { id: "19/23", nums: [19,20,22,23] },
-    { id: "25/29", nums: [25,26,28,29] },
-    { id: "31/35", nums: [31,32,34,35] },
+    // User-defined 12 non-overlapping "corner pairs" (vertical pairs).
+    // A spin "hits" the corner if it equals either number in the pair.
+    { id: "1/5",   nums: [1,5] },
+    { id: "7/11",  nums: [7,11] },
+    { id: "13/17", nums: [13,17] },
+    { id: "19/23", nums: [19,23] },
+    { id: "25/29", nums: [25,29] },
+    { id: "31/35", nums: [31,35] },
 
-    { id: "2/6",   nums: [2,3,5,6] },
-    { id: "8/12",  nums: [8,9,11,12] },
-    { id: "14/18", nums: [14,15,17,18] },
-    { id: "20/24", nums: [20,21,23,24] },
-    { id: "26/30", nums: [26,27,29,30] },
-    { id: "32/36", nums: [32,33,35,36] },
+    { id: "2/6",   nums: [2,6] },
+    { id: "8/12",  nums: [8,12] },
+    { id: "14/18", nums: [14,18] },
+    { id: "20/24", nums: [20,24] },
+    { id: "26/30", nums: [26,30] },
+    { id: "32/36", nums: [32,36] },
   ];
 
   // number -> cornerId (unique, because corners are non-overlapping)
@@ -2317,123 +2155,25 @@ function cornerHit(nums, spin){
   }
 
   // Freeze state (tap Activate to freeze; auto-reset after 2 hits; tap again to manually reset)
-  const CORNER_FREEZE_KEY = "cornerFreezeD5C_v1";
-  function loadCornerFreeze(){
-    try {
-      const raw = localStorage.getItem(CORNER_FREEZE_KEY);
-      if (!raw) return null;
-      const obj = JSON.parse(raw);
-      if (!obj || typeof obj !== "object") return null;
-      return obj;
-    } catch(e){ return null; }
+  
+  // (D5C) Freeze/activate mode removed — always live.
+
+function computeRunningDriest5(spins){
+    const stats = computeCornersStatsFromSpins(spins);
+
+    // "Age" = spins since last hit. If never hit in this session, age = spins.length.
+    const ranked = stats.map(c => ({
+      id: c.id,
+      hits: c.hits,
+      age: (c.lastHitIdx == null) ? spins.length : c.lastHitIdx
+    })).sort((a,b) => (b.age - a.age) || (a.hits - b.hits) || a.id.localeCompare(b.id));
+
+    const top5 = ranked.slice(0,5);
+    const line = top5.length ? top5.map(c => `${c.id} (${c.age})`).join(" / ") : "—";
+    return { top5, line };
+  } 
+    return 
   }
-  function saveCornerFreeze(state){
-    try { localStorage.setItem(CORNER_FREEZE_KEY, JSON.stringify(state)); } catch(e){}
-  }
-  function resetCornerFreeze(){
-    const st = { active:false, frozen:[], hitCount:0, lastSpinCount:0 };
-    saveCornerFreeze(st);
-    return st;
-  }
-  function ensureCornerFreeze(){
-    const st = loadCornerFreeze();
-    if (!st || typeof st.active !== "boolean") return resetCornerFreeze();
-    if (!Array.isArray(st.frozen)) st.frozen = [];
-    if (typeof st.hitCount !== "number") st.hitCount = 0;
-    if (typeof st.lastSpinCount !== "number") st.lastSpinCount = 0;
-    return st;
-  }
-
-  function freezeCurrentTop5(spins){
-    const all = computeCornersStatsFromSpins(spins);
-    const top5 = [...all].sort((a,b)=>{
-      if (a.hits !== b.hits) return a.hits - b.hits;       // driest = fewest hits
-      if (a.age !== b.age) return b.age - a.age;           // tiebreaker = oldest last hit
-      return a.id.localeCompare(b.id);
-    }).slice(0,5);
-    const st = { active:true, frozen: top5.map(x=>x.id), hitCount:0, lastSpinCount: spins.length };
-    saveCornerFreeze(st);
-    return st;
-  }
-
-  function updateCornerFreezeOnSpin(spins){
-    // called from render() to reconcile hit counting as spins grow
-    let st = ensureCornerFreeze();
-    if (!st.active || !st.frozen || st.frozen.length === 0) {
-      st.lastSpinCount = spins.length;
-      saveCornerFreeze(st);
-      return st;
-    }
-    const prevCount = st.lastSpinCount || 0;
-    if (spins.length <= prevCount) return st;
-
-    for (let i=prevCount; i<spins.length; i++){
-      const n0 = normalizeSpinNumber(spins[i]);
-      if (n0 === 0 || n0 === 99) continue;
-      const cid = NUM_TO_CORNER_ID.get(n0);
-      if (!cid) continue;
-      if (st.frozen.includes(cid)) {
-        st.hitCount = (st.hitCount||0) + 1;
-        if (st.hitCount >= 2) {
-          st = resetCornerFreeze();
-          st.lastSpinCount = spins.length;
-          saveCornerFreeze(st);
-          return st;
-        }
-      }
-    }
-    st.lastSpinCount = spins.length;
-    saveCornerFreeze(st);
-    return st;
-  }
-
-  function computeRunningDriest5(spins){
-    // reconcile freeze state first (auto-reset after 2 hits)
-    const st = updateCornerFreezeOnSpin(spins);
-
-    const all = computeCornersStatsFromSpins(spins);
-    const sorted = [...all].sort((a,b)=>{
-      if (a.hits !== b.hits) return a.hits - b.hits;
-      if (a.age !== b.age) return b.age - a.age;
-      return a.id.localeCompare(b.id);
-    });
-
-    const top5 = sorted.slice(0,5);
-
-    const show = (st.active && st.frozen && st.frozen.length) ? st.frozen : top5.map(x=>x.id);
-
-    // Build display line in driest-first order (use stats ages from current session)
-    const statById = new Map(all.map(x=>[x.id,x]));
-    const line = show.map(id=>{
-      const x = statById.get(id);
-      const age = x ? x.age : 0;
-      return `${id} (${age})`;
-    }).join(" / ");
-
-    return {
-      top5,
-      all: sorted,
-      isActive: !!st.active,
-      frozen: show,
-      hitCount: st.hitCount||0,
-      line,
-      setFlag: "D5C"
-    };
-  }
-
-  function activateCornerFreezeToggle(spins){
-    const st = ensureCornerFreeze();
-    if (st.active) {
-      const cleared = resetCornerFreeze();
-      cleared.lastSpinCount = spins.length;
-      saveCornerFreeze(cleared);
-      return cleared;
-    }
-    return freezeCurrentTop5(spins);
-  }
-
-  // global corner freeze state handle
-  let cornerFreeze = ensureCornerFreeze();
 function render() {
   try {
     $("winLabel").textContent = "Last " + windowN;
@@ -2544,20 +2284,10 @@ function render() {
         $("corners5b").textContent = "—";
       } else {
                 // Driest 5 Corners (non-overlapping 12-corner universe)
-        cornerFreeze = ensureCornerFreeze();
         const snap = computeRunningDriest5(sesSpins);
 
-        $("corners5").textContent = `${snap.setFlag} — ${snap.line || "—"}`;
-        $("corners5b").textContent = snap.isActive
-          ? `ACTIVE — Hits: ${snap.hitCount}/2 (auto-reset after 2 hits).`
-          : "LIVE — Tap Activate to freeze current top 5 (auto-resets after 2 hits).";
-
-        const btn = $("corners5Toggle");
-        btn.textContent = snap.isActive ? "Deactivate" : "Activate";
-        btn.onclick = ()=>{
-          cornerFreeze = activateCornerFreezeToggle(sesSpins);
-          render();
-        };
+        $("corners5").textContent = `D5C — ${snap.line || "—"}`;
+        $("corners5b").textContent = "LIVE — Driest first (largest number). Value = spins since last hit (0 = just hit).";
       }
     } catch(e) {
       $("corners5").textContent = "—";
