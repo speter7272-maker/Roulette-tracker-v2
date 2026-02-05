@@ -2121,14 +2121,29 @@ function scoreStrategies(vals) {
   const rn = repeatNumberInfo(vals, 5);
   const rs3 = repeatStreetInfo(vals, 3);
   let state = "Flat / Choppy";
-  if(rn.flag || rs3.flag) state = "Repeat-Heavy";
-  else {
-    const w15 = vals.slice(0,15);
-    const c15 = counts(w15);
-    const colMax15 = Math.max(c15.c1,c15.c2,c15.c3);
-    const dozMax15 = Math.max(c15.d1,c15.d2,c15.d3);
-    if(colMax15 >= 7 || dozMax15 >= 7) state = "Concentrated";
-  }
+
+  // Table-state classifier (last 15):
+  // - Repeat-Heavy: multiple repeats recently (numbers or streets)
+  // - Cold/Drought: very few repeats + high uniqueness (lots of "new" outcomes)
+  // - Even: balanced distribution across columns/dozens (no strong bias)
+  // - Concentrated: one column/dozen dominates (7+ hits in last 15)
+  const w15 = vals.slice(0,15);
+  const c15 = counts(w15);
+  const colMax15 = Math.max(c15.c1,c15.c2,c15.c3);
+  const colMin15 = Math.min(c15.c1,c15.c2,c15.c3);
+  const dozMax15 = Math.max(c15.d1,c15.d2,c15.d3);
+  const dozMin15 = Math.min(c15.d1,c15.d2,c15.d3);
+  const unique15 = new Set(w15).size;
+
+  const isRepeatHeavy = (rn.flag || rs3.flag);
+  const isConcentrated = (colMax15 >= 7) || (dozMax15 >= 7);
+  const isDrought = (!isRepeatHeavy) && (rn.count === 0) && (rs3.count === 0) && (unique15 >= 14);
+  const isEven = (!isRepeatHeavy) && (!isConcentrated) && ((colMax15 - colMin15) <= 2) && ((dozMax15 - dozMin15) <= 2);
+
+  if(isRepeatHeavy) state = "Repeat-Heavy";
+  else if(isDrought) state = "Cold/Drought";
+  else if(isEven) state = "Even";
+  else if(isConcentrated) state = "Concentrated";
 
   return {state, plays: top3, primary};
 }
@@ -2631,6 +2646,27 @@ $("gsah").textContent = `sinceGreen=${sinceGreen} • greens=${sessGreens}/${ses
 $("gsah2").textContent = "";
 
     $("state").textContent = scored.state;
+
+  // Trend → strategy guardrails (user-defined)
+  // IF Repeat-Heavy → 12 Soldiers (alt: Iron Turtle v2)
+  // IF Even → Easy Street (alt: Dozens Overload v2)
+  // IF Cold/Drought → 6 Diamonds + 0/00 (Elimination)
+  // ELSE → Sit out / Flat bet
+  const trendOverride = (() => {
+    if(scored.state === "Repeat-Heavy") {
+      return { mode: "CASH", name: "12 Soldiers — Unique Columns, 12→8 Reset", why: "Trend: Repeat-Heavy → favor structured coverage. Alt: Iron Turtle v2." };
+    }
+    if(scored.state === "Even") {
+      return { mode: "CASH", name: "Easy Street — Cold Side (Option A′ Late Straights)", why: "Trend: Even → play even/structure. Alt: Dozens Overload v2." };
+    }
+    if(scored.state === "Cold/Drought") {
+      return { mode: "COMP", name: "6 Diamonds + 0/00 (Primary)", why: "Trend: Cold/Drought → Six Diamonds (Elimination)." };
+    }
+    return null;
+  })();
+
+  if(trendOverride) scored.primary = trendOverride;
+
     $("state2").textContent = `Window: last ${windowN} • Session: ${sessionId}`;
     // Extra diagnostics
     const repNums = findRepeatNumbers(recent, 5);
@@ -2769,33 +2805,6 @@ if (db.ok) {
     $("importArea").value = "";
     $("importStatus").textContent = "";
   });
-
-  // iOS/Safari sometimes misses direct handlers if DOM is re-parented by malformed markup.
-  // Add a capture-phase delegated handler as a reliable fallback.
-  document.addEventListener("click", (e) => {
-    const t = e.target;
-    if (!t || !t.id) return;
-    if (t.id === "importBtn") {
-      e.preventDefault();
-      const raw = ($("importArea")?.value || "").trim();
-      if (!raw) {
-        $("importStatus").textContent = "Nothing to import.";
-        return;
-      }
-      try {
-        const res = importCsvText(raw);
-        $("importStatus").textContent = res.ok ? res.msg : ("Import failed: " + res.msg);
-      } catch (err) {
-        $("importStatus").textContent = "Import failed: " + (err?.message || String(err));
-      }
-    }
-    if (t.id === "clearImportBtn") {
-      e.preventDefault();
-      if ($("importArea")) $("importArea").value = "";
-      if ($("importStatus")) $("importStatus").textContent = "";
-    }
-  }, true);
-
 
     // ---------------- Wheel View (Last 20) ----------------
     const WHEEL = [0,28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,"00",27,10,25,29,12,8,19,31,18,6,21,33,16,4,23,35,14,2];
