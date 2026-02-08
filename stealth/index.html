@@ -1030,25 +1030,36 @@ Tracker UI
   }
 
   function openTableStateExplain() {
-    const tableState = ($("state2") && $("state2").textContent) ? $("state2").textContent.trim() : "";
-    const allowanceState = allowanceStateFromTableState(tableState);
-    const mode = (window.__tableMode || "CAN_SIT_OUT");
-    const allowance = allowedStrategiesByState(allowanceState, mode);
+    const tableState = ($("state")?.textContent || "").trim();
+    const metaLine = `Window: last ${WINDOW_N} • Session: ${SESSION_ID || 1}`;
 
-    const allow = (allowance && allowance.allow) ? allowance.allow : [];
-    const block = (allowance && allowance.block) ? allowance.block : [];
+    // Map visible table state → allowance bucket (STALL / STRUCTURED / CHOPPY)
+    const allowanceState = allowanceStateFromTableState(tableState);
+    const rule = allowedStrategiesByState(allowanceState, TABLE_MODE);
+
+    const ORDER = (typeof ALLOWANCE_STRATEGY_RANK !== "undefined") ? ALLOWANCE_STRATEGY_RANK : [];
+    const orderIdx = (name) => {
+      const i = ORDER.indexOf(name);
+      return i === -1 ? 999 : i;
+    };
+    const rank = (arr) => (arr || []).slice().sort((a, b) => orderIdx(a) - orderIdx(b));
+
+    const allowRanked = rank(rule.allow);
+    const blockRanked = rank(rule.block);
 
     const lines = [];
     lines.push(`Allowance bucket: ${allowanceState}`);
-    if (allowance && allowance.note) lines.push(`Note: ${allowance.note}`);
+    if (rule.note) lines.push(`Note: ${rule.note}`);
     lines.push("");
     lines.push("Allowed (best → worst):");
-    lines.push(allow.length ? "• " + allow.join("\n• ") : "• —");
+    if (!allowRanked.length) lines.push("• —");
+    allowRanked.forEach((s) => lines.push(`• ${s}`));
     lines.push("");
     lines.push("Blocked / stop using:");
-    lines.push(block.length ? "• " + block.join("\n• ") : "• —");
+    if (!blockRanked.length) lines.push("• —");
+    blockRanked.forEach((s) => lines.push(`• ${s}`));
 
-    openExplain(`Table state: ${tableState || "—"}`, lines.join("\n"));
+    openExplain(`Table state: ${tableState || "—"} • ${metaLine}`, lines.join("\n"));
   }
 
   // expose for inline onclick
