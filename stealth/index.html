@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • FULL • CASH PRIORITY v15.3.2 LOCKED.1.62</title>
+  <title>Roulette Trend Tracker • R2 • IRONING • v1.62</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -85,8 +85,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: 2026-01-13 • FULL • CASH PRIORITY v15.3.2 LOCKED.1.62</div>
-    <div class="build">FULL TRACKER — CASH PRIORITY + NEW STRATEGIES • v15.3.2 LOCKED.1.62</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.62 (baseline)</div>
+    <div class="build">R2 TRACKER — IRONING • v1.62 (baseline)</div>
     <div class="sub">Build date: <b>2026-01-09</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
 
     <div class="card">
@@ -179,10 +179,10 @@
             <div class="v mono" id="repStreets">—</div>
             <div class="k" id="repStreets2">—</div>
           </div>
-          <div class="box">
-            <div class="k">Hydra coldest 4 (since green)</div>
-            <div class="v mono" id="hydraCold4">—</div>
-            <div class="k" id="hydraCold4b">—</div>
+          <div class="box" id="verticalColsBox">
+            <div class="k">Vertical Columns (driest + repeats)</div>
+            <div class="v mono" id="verticalCols">—</div>
+            <div class="k" id="verticalCols2">—</div>
           </div>
           <div class="box">
             <div class="k">Dirty Bird DB‑CDS (live)</div>
@@ -313,8 +313,8 @@
   }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const STORAGE_KEY = "roulette_trend_tracker_base_keypad_tracking_v1";
-  const ACTIVE_KEY = "roulette_active_strategy_v1";
+  const STORAGE_KEY = "roulette_trend_tracker_R2_base_keypad_tracking_v1_62";
+  const ACTIVE_KEY = "roulette_R2_active_strategy_v1_62";
   const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
   const BLACK = new Set([2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35]);
 
@@ -1366,7 +1366,7 @@ on("expClose", "click", closeExplain);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "roulette_spins_ALL.csv";
+    a.download = "roulette_spins_R2_ALL.csv";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -2473,6 +2473,111 @@ function hydraCold4SinceGreen(spinsChrono){
   return {len: seg.length, cold4};
 }
 
+// Vertical-4 groups per dozen (0/00 excluded)
+const VERTICAL_GROUPS = {
+  D1: { C1:[1,4,7,10], C2:[2,5,8,11], C3:[3,6,9,12] },
+  D2: { C1:[13,16,19,22], C2:[14,17,20,23], C3:[15,18,21,24] },
+  D3: { C1:[25,28,31,34], C2:[26,29,32,35], C3:[27,30,33,36] }
+};
+
+function verticalKeyForNumber(n){
+  if (typeof n !== "number" || n < 1 || n > 36) return null;
+  if (n <= 12){
+    if ([1,4,7,10].includes(n)) return {d:"D1", c:"C1"};
+    if ([2,5,8,11].includes(n)) return {d:"D1", c:"C2"};
+    return {d:"D1", c:"C3"};
+  } else if (n <= 24){
+    if ([13,16,19,22].includes(n)) return {d:"D2", c:"C1"};
+    if ([14,17,20,23].includes(n)) return {d:"D2", c:"C2"};
+    return {d:"D2", c:"C3"};
+  } else {
+    if ([25,28,31,34].includes(n)) return {d:"D3", c:"C1"};
+    if ([26,29,32,35].includes(n)) return {d:"D3", c:"C2"};
+    return {d:"D3", c:"C3"};
+  }
+}
+
+function verticalMetrics(spinsChrono){
+  const total = spinsChrono.length;
+
+  // last 15 spins (chronological) for last15Hits
+  const last15 = spinsChrono.slice(Math.max(0, total-15));
+
+  const perDozen = { D1:{}, D2:{}, D3:{} };
+
+  // ages + last15Hits
+  ["D1","D2","D3"].forEach(d=>{
+    ["C1","C2","C3"].forEach(c=>{
+      const nums = VERTICAL_GROUPS[d][c];
+      // age: spins since last hit session-wide (greens count as spins)
+      let age = total; // never hit
+      for (let i=total-1;i>=0;i--){
+        const v = spinsChrono[i];
+        if (typeof v === "number" && nums.includes(v)){
+          age = (total-1) - i;
+          break;
+        }
+      }
+      // hits in last 15 spins (greens ignored implicitly)
+      let hits15 = 0;
+      for (const v of last15){
+        if (typeof v === "number" && nums.includes(v)) hits15++;
+      }
+      perDozen[d][c] = {age, hits15};
+    });
+  });
+
+  // driest per dozen (max age)
+  const driest = {};
+  ["D1","D2","D3"].forEach(d=>{
+    let best = {c:"C1", age:-1, hits15:0};
+    ["C1","C2","C3"].forEach(c=>{
+      const o = perDozen[d][c];
+      if (o.age > best.age) best = {c, age:o.age, hits15:o.hits15};
+    });
+    driest[d]=best;
+  });
+
+  // top driest overall (all 9 groups)
+  const all = [];
+  ["D1","D2","D3"].forEach(d=>{
+    ["C1","C2","C3"].forEach(c=>{
+      all.push({d,c, age:perDozen[d][c].age});
+    });
+  });
+  all.sort((a,b)=>b.age-a.age || a.d.localeCompare(b.d) || a.c.localeCompare(b.c));
+  const top5 = all.slice(0,5);
+
+  // repeat streaks per dozen (within that dozen's hit stream; ignore other dozens and green)
+  const streak = {};
+  ["D1","D2","D3"].forEach(d=>{
+    const stream = [];
+    for (const v of spinsChrono){
+      if (typeof v !== "number" || v<1 || v>36) continue;
+      if (d==="D1" && v<=12) stream.push(verticalKeyForNumber(v).c);
+      if (d==="D2" && v>=13 && v<=24) stream.push(verticalKeyForNumber(v).c);
+      if (d==="D3" && v>=25) stream.push(verticalKeyForNumber(v).c);
+    }
+    // current streak
+    let curCol = stream.length ? stream[stream.length-1] : null;
+    let cur = 0;
+    for (let i=stream.length-1;i>=0;i--){
+      if (stream[i]===curCol) cur++;
+      else break;
+    }
+    // max streak
+    let max = 0, run=0, prev=null;
+    for (const c of stream){
+      if (c===prev) run++;
+      else { run=1; prev=c; }
+      if (run>max) max=run;
+    }
+    streak[d]={curCol, cur, max};
+  });
+
+  return {perDozen, driest, top5, streak};
+}
+
 // Dirty Bird selection (simplified stats-only: cold-dozen mode, 2 cold numbers excluded)
 
 function dbcdsStatsLiveSinceGreen(spinsChrono){
@@ -2734,7 +2839,7 @@ function cornerHit(nums, spin){
   }
 
   // Freeze state (tap Activate to freeze; auto-reset after 2 hits; tap again to manually reset)
-  const CORNER_FREEZE_KEY = "cornerFreezeD5C_v1";
+  const CORNER_FREEZE_KEY = "cornerFreezeD5C_R2_v1_62";
   function loadCornerFreeze(){
     try {
       const raw = localStorage.getItem(CORNER_FREEZE_KEY);
@@ -2946,9 +3051,15 @@ $("gsah2").textContent = "";
 
     const sessChrono = spins.filter(x => x.s === sessionId).map(x => x.n).reverse();
 
-    const hc = hydraCold4SinceGreen(sessChrono);
-    $("hydraCold4").textContent = hc.cold4.map(o=>`${o.n}(${o.c})`).join("  ");
-    $("hydraCold4b").textContent = `sinceGN=${hc.len}`;
+    const vm = verticalMetrics(sessChrono);
+    const d1 = vm.driest.D1, d2 = vm.driest.D2, d3 = vm.driest.D3;
+    $("verticalCols").textContent = `D1 driest: ${d1.c} age=${d1.age}, last15Hits=${d1.hits15} • D2 driest: ${d2.c} age=${d2.age}, last15Hits=${d2.hits15} • D3 driest: ${d3.c} age=${d3.age}, last15Hits=${d3.hits15}`;
+    const s1 = vm.streak.D1, s2 = vm.streak.D2, s3 = vm.streak.D3;
+    $("verticalCols2").textContent = `Streaks: D1 ${s1.curCol||"—"}×${s1.cur} (max ${s1.max}) • D2 ${s2.curCol||"—"}×${s2.cur} (max ${s2.max}) • D3 ${s3.curCol||"—"}×${s3.cur} (max ${s3.max}) • Top driest: ${vm.top5.map(x=>x.d+"/"+x.c+"("+x.age+")").join(", ")}`;
+    const alertAge = Math.max(d1.age,d2.age,d3.age) >= 10;
+    const alertStreak = (s1.cur>=3) || (s2.cur>=3) || (s3.cur>=3);
+    const vb = $("verticalColsBox");
+    if (vb) vb.classList.toggle("alert", alertAge || alertStreak);
 
     
 const db = dbcdsStatsLiveSinceGreen(sessChrono);
