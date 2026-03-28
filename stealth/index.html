@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • R2 • IRONING • v1.63</title>
+  <title>Roulette Trend Tracker • R2 • IRONING • v1.64</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -79,15 +79,29 @@
     }
   
     .bigWhite{font-size:26px;font-weight:900;color:#ffffff;letter-spacing:0.2px}
+    .sidecol{display:flex;flex-direction:column;gap:10px}
+    .card.tight{padding:12px}
+    .sectionTitle{font-weight:900;margin-bottom:8px}
+    .stat .box.full{grid-column:1/-1}
+    .signalGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .decision{margin-top:6px;font-size:12px;color:#cbd5e1;line-height:1.35}
+    .decision b{color:#fff}
+    .mutedLine{font-size:11px;color:var(--muted);line-height:1.35}
+    @media(max-width:859px){
+      .wrap{padding:14px 10px 34px}
+      h1{font-size:24px}
+      .stat,.signalGrid{grid-template-columns:1fr}
+      .v{font-size:15px}
+    }
   </style>
 
 </head>
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.63 (baseline)</div>
-    <div class="build">R2 TRACKER — IRONING • v1.63 (baseline)</div>
-    <div class="sub">Build date: <b>2026-01-09</b>. Tap spins on the keypad. Tracks last 10/15/20: columns, dozens, double-streets, red/black, high/low, even/odd, Junko quadrants. Saves on-device.</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64 (baseline)</div>
+    <div class="build">R2 TRACKER — IRONING • v1.64 (baseline)</div>
+    <div class="sub">Build date: <b>2026-01-10</b>. Mobile layout tuned for strategy reads: entry signals, dozens/columns imbalance, 10-2-Win readiness, Greenland/green status, and Junko quadrant counts. Saves on-device.</div>
 
     <div class="card">
       <div class="row">
@@ -114,34 +128,35 @@
     </div>
 
     <div class="grid">
-      <div class="card">
-        <div style="font-weight:900;margin-bottom:8px">Quick input</div>
-        <div class="row">
-          <input id="manualInput" type="text" placeholder="Type: 0–36 or 00" inputmode="text" />
-          <button class="btn primary" id="addManualBtn" type="button">Add</button>
+      <div class="sidecol">
+        <div class="card">
+          <div class="sectionTitle">Quick input</div>
+          <div class="row">
+            <input id="manualInput" type="text" placeholder="Type: 0–36 or 00" inputmode="text" />
+            <button class="btn primary" id="addManualBtn" type="button">Add</button>
+          </div>
+          <div class="small" style="margin-top:8px">Tip: On iPhone, the keypad is usually fastest. Manual input is a backup.</div>
+
+          <div class="hr"></div>
+
+          <div id="keypadAnchor" class="sectionTitle" style="margin-bottom:0">Tap keypad</div>
+          <div id="kpDebug" class="small mono" style="margin:6px 0 10px; opacity:.9">Keypad taps: 0</div>
+          <div class="kbd" id="kbd"></div>
         </div>
-        <div class="small" style="margin-top:8px">Tip: On iPhone, the keypad is usually fastest. Manual input is a backup.</div>
 
-        <div class="hr"></div>
-
-        <div id="keypadAnchor" style="font-weight:900;margin-bottom:8px">Tap keypad</div>
-        <div id="kpDebug" class="small mono" style="margin:6px 0 10px; opacity:.9">Keypad taps: 0</div>
-        <div class="kbd" id="kbd"></div>
+        <div class="card tight">
+          <div class="sectionTitle">Last 20 (newest first)</div>
+          <textarea id="lastList" readonly placeholder="No spins yet."></textarea>
+          <div class="hr"></div>
+          <div class="row" style="gap:10px;flex-wrap:wrap">
+            <button class="btn" id="copyCsvBtn" type="button">Copy CSV</button>
+            <button class="btn" id="downloadCsvBtn" type="button">Download CSV</button>
+            <button class="btn" id="wheelViewBtn" type="button">Wheel View (Last 20)</button>
+          </div>
+        </div>
       </div>
 
-      <div class="hr"></div>
-
-      <div style="font-weight:900;margin-bottom:8px">Last 20 (newest first)</div>
-        <textarea id="lastList" readonly placeholder="No spins yet."></textarea>
-
-        <div class="hr"></div>
-
-        <div class="row" style="gap:10px;flex-wrap:wrap">
-          <button class="btn" id="copyCsvBtn" type="button">Copy CSV</button>
-          <button class="btn" id="downloadCsvBtn" type="button">Download CSV</button>
-          <button class="btn" id="wheelViewBtn" type="button">Wheel View (Last 20)</button>
-        </div>
-
+      <div class="sidecol">
       <div class="card">
         <div style="font-weight:900;margin-bottom:8px">Trend + tracking</div>
 
@@ -168,6 +183,24 @@
             <div class="k" id="state2">—</div>
           <button class="btn" id="tableStateExplainBtn" onclick="openTableStateExplain()" style="margin-top:10px; padding:10px 14px; font-size:14px;">Explain</button>
 </div>
+        </div>
+
+        <div class="signalGrid" style="margin-top:8px">
+          <div class="box">
+            <div class="k">Dozen signal</div>
+            <div class="v mono" id="dozenSignal">—</div>
+            <div class="k" id="dozenSignal2">—</div>
+          </div>
+          <div class="box">
+            <div class="k">Column signal</div>
+            <div class="v mono" id="columnSignal">—</div>
+            <div class="k" id="columnSignal2">—</div>
+          </div>
+          <div class="box full">
+            <div class="k">Strategy gates</div>
+            <div class="v mono" id="strategyGates">—</div>
+            <div class="k" id="strategyGates2">—</div>
+          </div>
         </div>
           <div class="box">
             <div class="k">Repeat numbers (≤5 spins)</div>
@@ -557,6 +590,39 @@ const JUNKO_BET_NUMS = (() => {
     }
     return {flag:false, text:"—"};
   }
+
+  function rank3Signals(hitsMap, agesMap, prefix){
+    const rows = [1,2,3].map(i => ({
+      key: `${prefix}${i}`,
+      label: `${prefix.toUpperCase()}${i}`,
+      hits: Number(hitsMap[`${prefix}${i}`] || 0),
+      age: Number(agesMap[`${prefix}${i}`] ?? 999)
+    }));
+    const driest = [...rows].sort((a,b)=> (a.hits-b.hits) || (b.age-a.age) || a.label.localeCompare(b.label))[0];
+    const hottest = [...rows].sort((a,b)=> (b.hits-a.hits) || (a.age-b.age) || a.label.localeCompare(b.label))[0];
+    const maxHits = Math.max(...rows.map(r=>r.hits));
+    const minHits = Math.min(...rows.map(r=>r.hits));
+    const gap = maxHits - minHits;
+    const state = gap >= 5 ? 'STRONG' : (gap >= 3 ? 'MODERATE' : 'BALANCED');
+    return {rows, driest, hottest, gap, state};
+  }
+
+  function labelAge(a, total){
+    return a === 999 ? `${total}+` : String(a);
+  }
+
+  function ready102Win(jAges){
+    const rows = [
+      {id:'GN', age:jAges.gn},
+      {id:'HO', age:jAges.ho},
+      {id:'LO', age:jAges.lo},
+      {id:'M', age:jAges.m}
+    ].map(x => ({...x, age: x.age === 999 ? 999 : Number(x.age)}));
+    rows.sort((a,b)=> (b.age-a.age) || a.id.localeCompare(b.id));
+    const best = rows[0];
+    return {best, ready: best.age >= 7};
+  }
+
 
   const STRATEGY_DETAILS = {
     "6 Diamonds + 0/00 (Primary)":
@@ -2985,6 +3051,26 @@ function render() {
     const fmtAge = (a) => (a === 999 ? (recent.length + "+") : String(a));
     $("junko").textContent = "GN " + cts.gn + " (" + fmtAge(jAges.gn) + ") | HO " + cts.ho + " (" + fmtAge(jAges.ho) + ") | LO " + cts.lo + " (" + fmtAge(jAges.lo) + ") | M " + cts.m + " (" + fmtAge(jAges.m) + ")";
     $("junkoBets").textContent = `Bet numbers — GN ${JUNKO_BET_NUMS.GN} | HO ${JUNKO_BET_NUMS.HO} | LO ${JUNKO_BET_NUMS.LO} | M ${JUNKO_BET_NUMS.M}`;
+    $("greenDrought").textContent = String(Number.isFinite(gdc) ? gdc : 0);
+
+    const dozSig = rank3Signals(cts, dAgesSess, 'd');
+    const colSig = rank3Signals(cts, cAgesSess, 'c');
+    $("dozenSignal").textContent = `DRY ${dozSig.driest.label} (${dozSig.driest.hits}, ${labelAge(dozSig.driest.age, sessTotal)}) • HOT ${dozSig.hottest.label} (${dozSig.hottest.hits}, ${labelAge(dozSig.hottest.age, sessTotal)})`;
+    $("dozenSignal2").textContent = `${dozSig.state} imbalance • gap ${dozSig.gap} • Tupelo ${dozSig.state==='BALANCED' ? 'WAIT' : (dozSig.driest.label==='D1' ? 'LOW' : (dozSig.driest.label==='D2' ? 'MIDDLE' : 'HIGH'))}`;
+
+    $("columnSignal").textContent = `DRY ${colSig.driest.label} (${colSig.driest.hits}, ${labelAge(colSig.driest.age, sessTotal)}) • HOT ${colSig.hottest.label} (${colSig.hottest.hits}, ${labelAge(colSig.hottest.age, sessTotal)})`;
+    $("columnSignal2").textContent = `${colSig.state} imbalance • gap ${colSig.gap} • Double Cross ${colSig.gap >= 3 && dozSig.gap >= 3 ? 'READY' : 'WAIT'}`;
+
+    const repHeavy = repSt.length >= 3 || repNums.length >= 2 || scored.state === 'Repeat-Heavy';
+    const ten2 = ready102Win(jAges);
+    const gateBits = [
+      `10-2-Win ${ten2.ready ? 'READY ' + ten2.best.id + ' (' + (ten2.best.age===999 ? sessTotal+'+' : ten2.best.age) + ')' : 'WAIT'}`,
+      `4x4 ${repHeavy ? 'SKIP' : 'SAFE'}`,
+      `Plus 9 ${repHeavy ? 'HOT MODE' : 'DRY MODE'}`,
+      `Green ${sinceGreen >= 15 ? 'ACTIVE' : 'WAIT'}`
+    ];
+    $("strategyGates").textContent = gateBits.join(' • ');
+    $("strategyGates2").textContent = `Repeat-heavy=${repHeavy ? 'yes' : 'no'} • Tupelo ${dozSig.gap >= 3 ? 'READY' : 'WAIT'} • Double Cross ${colSig.gap >= 3 && dozSig.gap >= 3 ? 'READY' : 'WAIT'}`;
 
     $("lastList").value = spins.slice(0,20).map(x => (x.n==="00"?"00":String(x.n))).join(", ");
 
