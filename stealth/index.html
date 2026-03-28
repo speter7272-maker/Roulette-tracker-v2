@@ -3021,6 +3021,8 @@ function activateCornerFreezeToggle(spins){
   }
 function render() {
   try {
+    let sinceGreen = Number.isFinite(gdc) ? gdc : 0;
+    let scored = { state: "—", primary: {name:"Sit out", why:"—"} };
     $("winLabel").textContent = "Last " + windowN;
     $("spinCount").textContent = String(spins.length);
     $("sessionCount").textContent = String(spins.filter(x => x.s===sessionId).length);
@@ -3061,11 +3063,13 @@ function render() {
     $("columnSignal").textContent = `DRY ${colSig.driest.label} (${colSig.driest.hits}, ${labelAge(colSig.driest.age, sessTotal)}) • HOT ${colSig.hottest.label} (${colSig.hottest.hits}, ${labelAge(colSig.hottest.age, sessTotal)})`;
     $("columnSignal2").textContent = `${colSig.state} imbalance • gap ${colSig.gap} • Double Cross ${colSig.gap >= 3 && dozSig.gap >= 3 ? 'READY' : 'WAIT'}`;
 
+    const scored = scoreStrategies(recent);
     const repNums = findRepeatNumbers(recent, 5);
     const repSt = findRepeatStreets(recent, 5);
 
     const repHeavy = repSt.length >= 3 || repNums.length >= 2 || scored.state === 'Repeat-Heavy';
     const ten2 = ready102Win(jAges);
+    const sinceGreen = Number.isFinite(gdc) ? gdc : 0;
     const gateBits = [
       `10-2-Win ${ten2.ready ? 'READY ' + ten2.best.id + ' (' + (ten2.best.age===999 ? sessTotal+'+' : ten2.best.age) + ')' : 'WAIT'}`,
       `4x4 ${repHeavy ? 'SKIP' : 'SAFE'}`,
@@ -3077,12 +3081,12 @@ function render() {
 
     $("lastList").value = sessSpinObjs.map(x => (x.n==="00"?"00":String(x.n))).join(", ");
 
-    const scored = scoreStrategies(recent);
+    
     $("recommend").textContent = `${scored.primary.mode} — ${scored.primary.name}`;
     $("reason").textContent = scored.primary.why || "—";
 
 // ---- GREEN STATUS (view-only) ----
-const sinceGreen = Number.isFinite(gdc) ? gdc : 0;
+
 
 // Current session totals
 const sessGreens = sessNums.reduce((a, n) => a + (isGreen(n) ? 1 : 0), 0);
@@ -3236,7 +3240,7 @@ if (db.ok) {
     try { const rc = $("recommend"); if (rc && rc.textContent === 'Sit out') rc.textContent = 'Render error'; } catch(_) {}
   }
 // Rebuild keypad after every render (render() replaces the DOM and can wipe it)
-    try { buildKeypad(); } catch(e) { console.warn('Keypad build failed', e); }
+    
 }
 
   // UI wiring
