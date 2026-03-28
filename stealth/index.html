@@ -145,13 +145,13 @@
         </div>
 
         <div class="card tight">
-          <div class="sectionTitle">Last 20 (newest first)</div>
-          <textarea id="lastList" readonly placeholder="No spins yet."></textarea>
+          <div class="sectionTitle">Number history (newest first)</div>
+          <textarea id="lastList" readonly placeholder="No spins yet." style="min-height:140px; max-height:320px;"></textarea>
           <div class="hr"></div>
           <div class="row" style="gap:10px;flex-wrap:wrap">
             <button class="btn" id="copyCsvBtn" type="button">Copy CSV</button>
             <button class="btn" id="downloadCsvBtn" type="button">Download CSV</button>
-            <button class="btn" id="wheelViewBtn" type="button">Wheel View (Last 20)</button>
+            <button class="btn" id="wheelViewBtn" type="button">Wheel View</button>
           </div>
         </div>
       </div>
@@ -320,7 +320,7 @@
     <div class="modalCard">
       <div class="modalHeader">
         <div>
-          <div class="h2" style="margin:0;">American Wheel — Last 20</div>
+          <div class="h2" style="margin:0;">American Wheel — Recent History</div>
           <div class="hint" id="wheelSubtitle" style="margin-top:4px;">Radial bars show hit count per pocket (most recent 20 spins).</div>
         </div>
         <button class="btn" id="wheelCloseBtn" type="button">Close</button>
@@ -333,7 +333,7 @@
   </div>
 <script>
 
-  console.log("Roulette Tracker BUILD v15.3.2 LOCKED (scoreTrinity fix)");
+  console.log("Roulette Tracker BUILD v1.64.1 (render + history fix)");
 
   // DOM helpers
   const $ = (id) => document.getElementById(id);
@@ -3061,6 +3061,9 @@ function render() {
     $("columnSignal").textContent = `DRY ${colSig.driest.label} (${colSig.driest.hits}, ${labelAge(colSig.driest.age, sessTotal)}) • HOT ${colSig.hottest.label} (${colSig.hottest.hits}, ${labelAge(colSig.hottest.age, sessTotal)})`;
     $("columnSignal2").textContent = `${colSig.state} imbalance • gap ${colSig.gap} • Double Cross ${colSig.gap >= 3 && dozSig.gap >= 3 ? 'READY' : 'WAIT'}`;
 
+    const repNums = findRepeatNumbers(recent, 5);
+    const repSt = findRepeatStreets(recent, 5);
+
     const repHeavy = repSt.length >= 3 || repNums.length >= 2 || scored.state === 'Repeat-Heavy';
     const ten2 = ready102Win(jAges);
     const gateBits = [
@@ -3072,7 +3075,7 @@ function render() {
     $("strategyGates").textContent = gateBits.join(' • ');
     $("strategyGates2").textContent = `Repeat-heavy=${repHeavy ? 'yes' : 'no'} • Tupelo ${dozSig.gap >= 3 ? 'READY' : 'WAIT'} • Double Cross ${colSig.gap >= 3 && dozSig.gap >= 3 ? 'READY' : 'WAIT'}`;
 
-    $("lastList").value = spins.slice(0,20).map(x => (x.n==="00"?"00":String(x.n))).join(", ");
+    $("lastList").value = sessSpinObjs.map(x => (x.n==="00"?"00":String(x.n))).join(", ");
 
     const scored = scoreStrategies(recent);
     $("recommend").textContent = `${scored.primary.mode} — ${scored.primary.name}`;
@@ -3128,11 +3131,9 @@ $("gsah2").textContent = "";
 
     $("state2").textContent = `Window: last ${windowN} • Session: ${sessionId}`;
     // Extra diagnostics
-    const repNums = findRepeatNumbers(recent, 5);
     $("repNums").textContent = repNums.length ? repNums.map(o=>`${o.n} (gap ${o.gap})`).join(", ") : "—";
     $("repNums2").textContent = repNums.length ? `count: ${repNums.length}` : "—";
 
-    const repSt = findRepeatStreets(recent, 5);
     const repStBox = $("repStreetsBox");
     if (repStBox) repStBox.classList.toggle("alert", repSt.length >= 3);
     $("repStreets").textContent = repSt.length ? repSt.map(o=>`S${o.st} (gap ${o.gap})`).join(", ") : "—";
@@ -3274,7 +3275,7 @@ if (db.ok) {
     $("importStatus").textContent = "";
   });
 
-    // ---------------- Wheel View (Last 20) ----------------
+    // ---------------- Wheel View ----------------
     const WHEEL = [0,28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,"00",27,10,25,29,12,8,19,31,18,6,21,33,16,4,23,35,14,2];
 
     function numLabel(n){ return (n === "00") ? "00" : String(n); }
