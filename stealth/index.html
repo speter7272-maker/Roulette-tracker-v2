@@ -95,14 +95,25 @@
       .stat,.signalGrid{grid-template-columns:1fr}
       .v{font-size:15px}
     }
+  
+    .toolbarToggle{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .seg{display:inline-flex;background:var(--chip);border:1px solid var(--border);border-radius:12px;padding:3px;gap:4px}
+    .seg button{appearance:none;border:0;background:transparent;color:var(--muted);padding:8px 10px;border-radius:9px;font-weight:800;cursor:pointer}
+    .seg button.active{background:rgba(96,165,250,.18);color:var(--txt);border:1px solid rgba(96,165,250,.35)}
+    .miniGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .perfTable{width:100%;border-collapse:collapse;font-size:12px}
+    .perfTable th,.perfTable td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top}
+    .perfTable th{color:var(--muted);font-weight:800}
+    .perfTable td.num{text-align:right;font-variant-numeric:tabular-nums}
+
   </style>
 
 </head>
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64.4 (live snapshot + keypad safe)</div>
-    <div class="build">R2 TRACKER — IRONING • v1.64.4 (live snapshot + keypad safe)</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64.5 (play log + live mode)</div>
+    <div class="build">R2 TRACKER — IRONING • v1.64.5 (play log + live mode)</div>
     <div class="sub">Build date: <b>2026-01-10</b>. Mobile layout tuned for strategy reads: entry signals, dozens/columns imbalance, 10-2-Win readiness, Greenland/green status, and Junko quadrant counts. Saves on-device.</div>
 
     <div class="card">
@@ -118,6 +129,13 @@
           Casino:
           <input id="casinoInput" type="text" placeholder="e.g., Caesars / Harrah’s Joliet" style="flex:1; min-width:180px" />
         </label>
+      </div>
+      <div class="toolbarToggle">
+        <div class="pill">Table mode</div>
+        <div class="seg" id="tableModeSeg">
+          <button type="button" id="modeCanSitBtn" class="active">Machine • can sit out</button>
+          <button type="button" id="modeMustBetBtn">Live table • must bet</button>
+        </div>
       </div>
       <div class="row" style="margin-top:10px">
         <button class="btn" id="undoBtn" type="button">Undo</button>
@@ -291,6 +309,53 @@
 
         <div id="topPlays" class="topplays"></div>
 
+
+        <div class="card" style="margin-top:14px;">
+          <div style="font-weight:900">Play / sit-out log</div>
+          <div class="small" style="margin-top:6px">Track what you actually did at the table and settle each play manually.</div>
+          <div class="miniGrid" style="margin-top:10px">
+            <div class="box">
+              <div class="k">Current action</div>
+              <div class="v mono" id="currentAction">None logged</div>
+              <div class="k" id="currentActionMeta">—</div>
+            </div>
+            <div class="box">
+              <div class="k">Session totals</div>
+              <div class="v mono" id="sessionActionTotals">Play 0 • Sit 0</div>
+              <div class="k" id="sessionActionMeta">Wins 0 • Losses 0 • PnL 0u</div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="logPlayBtn" type="button">Log Play</button>
+            <button class="btn" id="logSitBtn" type="button">Log Sit Out</button>
+            <button class="btn" id="settleWinBtn" type="button">Settle Win</button>
+            <button class="btn" id="settleLossBtn" type="button">Settle Loss</button>
+            <button class="btn" id="settlePushBtn" type="button">Settle Push</button>
+          </div>
+          <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap">
+            <label class="pill" style="gap:8px;align-items:center">
+              PnL units:
+              <input id="settleUnitsInput" type="text" value="15" inputmode="numeric" style="width:72px" />
+            </label>
+            <button class="btn danger" id="clearPerfBtn" type="button">Clear performance</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div style="font-weight:900">Strategy performance</div>
+          <div class="small" style="margin-top:6px">Manual tracker for how each strategy is doing in real play.</div>
+          <div style="overflow:auto;margin-top:10px">
+            <table class="perfTable">
+              <thead>
+                <tr><th>Strategy</th><th class="num">Play</th><th class="num">Sit</th><th class="num">W</th><th class="num">L</th><th class="num">Push</th><th class="num">PnL</th></tr>
+              </thead>
+              <tbody id="perfBody">
+                <tr><td colspan="7" class="small">No play log yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="hr"></div>
 
         <div class="stat">
@@ -462,6 +527,9 @@ const JUNKO_BET_NUMS = (() => {
 
   let windowN = 15;
   let sessionId = 1;
+  let tableMode = "CAN_SIT_OUT";
+  let stateTracker = { current:"—", sinceSpinCount:0 };
+  let perf = { actions: [], stats: {}, activePlay: null };
   let lastStateLabel = null;
   let stateStartSpinCount = 0;
 
@@ -1241,7 +1309,7 @@ on("expClose", "click", closeExplain);
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        spins, windowN, sessionId, casino: $("casinoInput").value || ""
+        spins, windowN, sessionId, tableMode, perf, stateTracker, casino: $("casinoInput").value || ""
       }));
     } catch(_) {}
   }
@@ -1260,6 +1328,9 @@ on("expClose", "click", closeExplain);
       }
       if([10,15,20].includes(obj.windowN)) windowN = obj.windowN;
       if(Number.isFinite(obj.sessionId)) sessionId = Number(obj.sessionId);
+      if(obj.tableMode==="MUST_BET" || obj.tableMode==="CAN_SIT_OUT") tableMode = obj.tableMode;
+      if(obj.perf && typeof obj.perf==="object") perf = Object.assign({actions:[],stats:{},activePlay:null}, obj.perf);
+      if(obj.stateTracker && typeof obj.stateTracker==="object") stateTracker = Object.assign({current:"—",sinceSpinCount:0}, obj.stateTracker);
       if(typeof obj.casino === "string") $("casinoInput").value = obj.casino;
     } catch(_) {}
   }
@@ -1421,6 +1492,7 @@ on("expClose", "click", closeExplain);
   function newSession() {
     sessionId += 1;
       gdc = 0;
+      perf.activePlay = null;
       gsah = { ...gsah, state:"OFF", cooldown:false, u:1, lossCount:0, betSpins:0, pnlU:0, pending:false, pendingU:1, offReason:"" };
     save();
     render();
@@ -2484,15 +2556,20 @@ function scoreStrategies(vals) {
     const six = pickByName("6 Diamonds + 0/00 (Primary)");
     if(six) primary = {...six, mode:"COMP"};
   } else {
-    // Else: Sit out or flat bet (keep existing primary, but if weak, suggest sit out).
+    // Else: Sit out or flat bet.
     if(primary && primary.score < 80){
-      primary = {name:"Sit out / Flat bet", score: primary.score||1, why:"No clean trend signal; keep exposure minimal.", mode:"COMP"};
+      if((tableMode || "CAN_SIT_OUT") === "MUST_BET"){
+        const fallback = pickByName("6 Diamonds + 0/00 (Primary)") || pickByName("WB-RTB");
+        if(fallback) primary = {...fallback, mode:"COMP", why:"Live table mode: cannot sit out, so default to controlled fallback."};
+      } else {
+        primary = {name:"Sit out / Flat bet", score: primary.score||1, why:"No clean trend signal; keep exposure minimal.", mode:"COMP"};
+      }
     }
   }
 
 
   // Apply strategy allowance filter (CHECKMATE 8 rules)
-  window.__tableMode = "CAN_SIT_OUT";
+  window.__tableMode = tableMode || "CAN_SIT_OUT";
   const allowanceState = allowanceStateFromTableState(state);
   const allowance = allowedStrategiesByState(allowanceState, window.__tableMode);
   window.__lastAllowance = allowance;
@@ -3043,6 +3120,104 @@ function cornerHit(nums, spin){
     };
   }
 
+
+function ensureStatRow(name){
+  if(!perf.stats[name]) perf.stats[name] = {plays:0,sits:0,wins:0,losses:0,pushes:0,pnl:0};
+  return perf.stats[name];
+}
+function currentRecommendedStrategyName(){
+  const rec = $("recommend") ? $("recommend").textContent : "";
+  if(!rec) return "Unknown";
+  return rec.replace(/^CASH\s+—\s+/,'').replace(/^COMP\s+—\s+/,'').trim();
+}
+function logAction(kind){
+  const state = $("state") ? $("state").textContent : "—";
+  const strategy = currentRecommendedStrategyName();
+  const row = ensureStatRow(strategy);
+  const action = {kind, strategy, state, spinCount: spins.length, sessionId, t: Date.now()};
+  perf.actions.unshift(action);
+  if(kind==="PLAY"){
+    row.plays += 1;
+    perf.activePlay = action;
+  } else if(kind==="SIT"){
+    row.sits += 1;
+  }
+  save();
+  render();
+}
+function settleActivePlay(result){
+  if(!perf.activePlay) return;
+  const strategy = perf.activePlay.strategy || "Unknown";
+  const row = ensureStatRow(strategy);
+  const unitsRaw = ($("settleUnitsInput") && $("settleUnitsInput").value) ? $("settleUnitsInput").value : "0";
+  let units = Number(unitsRaw);
+  if(!Number.isFinite(units)) units = 0;
+  if(result==="WIN"){
+    row.wins += 1;
+    row.pnl += Math.abs(units);
+  } else if(result==="LOSS"){
+    row.losses += 1;
+    row.pnl -= Math.abs(units);
+  } else {
+    row.pushes += 1;
+  }
+  perf.actions.unshift({kind:"SETTLE_"+result, strategy, state: perf.activePlay.state || "—", spinCount: spins.length, sessionId, units, t: Date.now()});
+  perf.activePlay = null;
+  save();
+  render();
+}
+function clearPerformance(){
+  if(!confirm("Clear play / sit-out performance?")) return;
+  perf = { actions: [], stats: {}, activePlay: null };
+  save();
+  render();
+}
+function renderPerformance(){
+  const body = $("perfBody");
+  if(!body) return;
+  const names = Object.keys(perf.stats || {}).sort((a,b)=>{
+    const pa = perf.stats[a] || {}, pb = perf.stats[b] || {};
+    return (pb.plays||0) - (pa.plays||0) || a.localeCompare(b);
+  });
+  if(!names.length){
+    body.innerHTML = '<tr><td colspan="7" class="small">No play log yet.</td></tr>';
+  } else {
+    body.innerHTML = names.map(name=>{
+      const s = perf.stats[name] || {};
+      return `<tr>
+        <td>${name}</td>
+        <td class="num">${s.plays||0}</td>
+        <td class="num">${s.sits||0}</td>
+        <td class="num">${s.wins||0}</td>
+        <td class="num">${s.losses||0}</td>
+        <td class="num">${s.pushes||0}</td>
+        <td class="num">${s.pnl||0}u</td>
+      </tr>`;
+    }).join("");
+  }
+  const playCount = perf.actions.filter(x=>x.kind==="PLAY" && x.sessionId===sessionId).length;
+  const sitCount = perf.actions.filter(x=>x.kind==="SIT" && x.sessionId===sessionId).length;
+  const winCount = perf.actions.filter(x=>x.kind==="SETTLE_WIN" && x.sessionId===sessionId).length;
+  const lossCount = perf.actions.filter(x=>x.kind==="SETTLE_LOSS" && x.sessionId===sessionId).length;
+  const sessPnl = Object.values(perf.stats || {}).reduce((a,s)=>a + Number(s.pnl||0), 0);
+  if($("sessionActionTotals")) $("sessionActionTotals").textContent = `Play ${playCount} • Sit ${sitCount}`;
+  if($("sessionActionMeta")) $("sessionActionMeta").textContent = `Wins ${winCount} • Losses ${lossCount} • PnL ${sessPnl}u`;
+  if($("currentAction")){
+    if(perf.activePlay){
+      $("currentAction").textContent = `PLAY • ${perf.activePlay.strategy}`;
+      $("currentActionMeta").textContent = `State ${perf.activePlay.state} • Spin ${perf.activePlay.spinCount}`;
+    } else {
+      const last = (perf.actions && perf.actions[0]) ? perf.actions[0] : null;
+      $("currentAction").textContent = last ? `${last.kind.replace("SETTLE_","")} • ${last.strategy}` : "None logged";
+      $("currentActionMeta").textContent = last ? `Spin ${last.spinCount} • Session ${last.sessionId}` : "—";
+    }
+  }
+}
+function applyTableModeUI(){
+  const canBtn = $("modeCanSitBtn"), mustBtn = $("modeMustBetBtn");
+  if(canBtn) canBtn.classList.toggle("active", tableMode==="CAN_SIT_OUT");
+  if(mustBtn) mustBtn.classList.toggle("active", tableMode==="MUST_BET");
+}
 function activateCornerFreezeToggle(spins){
     const st = ensureCornerFreeze();
     if (st.active) {
@@ -3096,6 +3271,13 @@ function render() {
     $("columnSignal2").textContent = `${colSig.state} imbalance • gap ${colSig.gap} • Double Cross ${colSig.gap >= 3 && dozSig.gap >= 3 ? 'READY' : 'WAIT'}`;
 
     const scored = scoreStrategies(recent);
+    if (stateTracker.current !== scored.state){
+      stateTracker.current = scored.state;
+      stateTracker.sinceSpinCount = spins.length;
+      save();
+    }
+    const stateDuration = Math.max(0, spins.length - (Number(stateTracker.sinceSpinCount)||0));
+    let stateSeverity = "Mild";
     const sinceGreen = Number.isFinite(gdc) ? gdc : 0;
     const repNums = findRepeatNumbers(recent, 5);
     const repSt = findRepeatStreets(recent, 5);
@@ -3142,6 +3324,16 @@ $("gsah").textContent = `sinceGreen=${sinceGreen} • greens=${sessGreens}/${ses
 $("gsah2").textContent = "";
 
     $("state").textContent = scored.state;
+    if($("liveState")) $("liveState").textContent = scored.state;
+    if(repHeavy || dozSig.gap >= 5 || colSig.gap >= 5) stateSeverity = "Strong";
+    else if(dozSig.gap >= 3 || colSig.gap >= 3 || repNums.length || repSt.length) stateSeverity = "Moderate";
+    if($("state2")) $("state2").textContent = `Window: last ${windowN} • Session: ${sessionId} • Dur ${stateDuration}`;
+    if($("liveStateMeta")) $("liveStateMeta").textContent = `Dur ${stateDuration} spins • ${stateSeverity} • ${tableMode==="MUST_BET" ? "Live table" : "Machine"}`;
+    const qGap = Math.max(cts.gn,cts.ho,cts.lo,cts.m) - Math.min(cts.gn,cts.ho,cts.lo,cts.m);
+    if($("live102")) $("live102").textContent = `GN ${cts.gn} • HO ${cts.ho} • LO ${cts.lo} • M ${cts.m}`;
+    if($("live102Meta")) $("live102Meta").textContent = `Gap ${qGap} • ${qGap>=5 ? "EXTREME" : qGap>=3 ? "DRY" : "BALANCED"} • Best ${ten2.best.id}`;
+    if($("liveRepeat")) $("liveRepeat").textContent = `Nums ${repNums.length} • Streets ${repSt.length} • ${repHeavy ? "REPEAT-HEAVY" : "OK"}`;
+    if($("liveImbalance")) $("liveImbalance").textContent = `Dozen gap ${dozSig.gap} • Column gap ${colSig.gap}`;
 
     if (scored.state !== lastStateLabel) {
       lastStateLabel = scored.state;
@@ -3186,7 +3378,6 @@ $("gsah2").textContent = "";
 
   if(trendOverride) scored.primary = trendOverride;
 
-    $("state2").textContent = `Window: last ${windowN} • Session: ${sessionId}`;
     // Extra diagnostics
     $("repNums").textContent = repNums.length ? repNums.map(o=>`${o.n} (gap ${o.gap})`).join(", ") : "—";
     $("repNums2").textContent = repNums.length ? `count: ${repNums.length}` : "—";
@@ -3276,6 +3467,9 @@ if (db.ok) {
       b.addEventListener("click", () => showExplain(b.getAttribute("data-exp")));
     });
 
+    renderPerformance();
+    applyTableModeUI();
+
     // Primary explain button
     const pb = $("primaryExplainBtn");
     if(STRATEGY_DETAILS[scored.primary.name] && scored.primary.name !== "Sit out") {
@@ -3322,6 +3516,14 @@ if (db.ok) {
 
   on("copyCsvBtn", "click", copyCsv);
   on("downloadCsvBtn", "click", downloadCsv);
+  on("modeCanSitBtn", "click", () => { tableMode = "CAN_SIT_OUT"; save(); render(); });
+  on("modeMustBetBtn", "click", () => { tableMode = "MUST_BET"; save(); render(); });
+  on("logPlayBtn", "click", () => logAction("PLAY"));
+  on("logSitBtn", "click", () => logAction("SIT"));
+  on("settleWinBtn", "click", () => settleActivePlay("WIN"));
+  on("settleLossBtn", "click", () => settleActivePlay("LOSS"));
+  on("settlePushBtn", "click", () => settleActivePlay("PUSH"));
+  on("clearPerfBtn", "click", clearPerformance);
 
   on("importBtn", "click", () => {
     const res = importCsvText($("importArea").value);
