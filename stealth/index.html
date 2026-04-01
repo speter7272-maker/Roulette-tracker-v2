@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • R2 • IRONING • v1.64.3</title>
+  <title>Roulette Trend Tracker • R2 • IRONING • v1.64.4</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -81,6 +81,8 @@
     .bigWhite{font-size:26px;font-weight:900;color:#ffffff;letter-spacing:0.2px}
     .sidecol{display:flex;flex-direction:column;gap:10px}
     .card.tight{padding:12px}
+    .card.sticky{position:sticky;top:10px;z-index:40}
+    .snapshotGrid{display:grid;grid-template-columns:1fr;gap:8px}
     .sectionTitle{font-weight:900;margin-bottom:8px}
     .stat .box.full{grid-column:1/-1}
     .signalGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -99,8 +101,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64.3 (keypad fix)</div>
-    <div class="build">R2 TRACKER — IRONING • v1.64.3 (keypad fix)</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64.4 (live snapshot + keypad safe)</div>
+    <div class="build">R2 TRACKER — IRONING • v1.64.4 (live snapshot + keypad safe)</div>
     <div class="sub">Build date: <b>2026-01-10</b>. Mobile layout tuned for strategy reads: entry signals, dozens/columns imbalance, 10-2-Win readiness, Greenland/green status, and Junko quadrant counts. Saves on-device.</div>
 
     <div class="card">
@@ -142,6 +144,30 @@
           <div id="keypadAnchor" class="sectionTitle" style="margin-bottom:0">Tap keypad</div>
           <div id="kpDebug" class="small mono" style="margin:6px 0 10px; opacity:.9">Keypad taps: 0</div>
           <div class="kbd" id="kbd"></div>
+        </div>
+
+        <div class="card sticky tight">
+          <div class="sectionTitle">Live snapshot</div>
+          <div class="snapshotGrid">
+            <div class="box">
+              <div class="k">Table state</div>
+              <div class="v" id="liveState">—</div>
+              <div class="k" id="liveStateMeta">—</div>
+            </div>
+            <div class="box">
+              <div class="k">10-2-Win sectors</div>
+              <div class="v mono" id="live102">—</div>
+              <div class="k" id="live102Meta">—</div>
+            </div>
+            <div class="box">
+              <div class="k">Repeat pressure</div>
+              <div class="v mono" id="liveRepeat">—</div>
+            </div>
+            <div class="box">
+              <div class="k">Imbalance</div>
+              <div class="v mono" id="liveImbalance">—</div>
+            </div>
+          </div>
         </div>
 
         <div class="card tight">
@@ -436,6 +462,8 @@ const JUNKO_BET_NUMS = (() => {
 
   let windowN = 15;
   let sessionId = 1;
+  let lastStateLabel = null;
+  let stateStartSpinCount = 0;
 
   const trendDismissBtn = $("trendDismissBtn");
   const trendAlert = $("trendAlert");
@@ -3114,6 +3142,29 @@ $("gsah").textContent = `sinceGreen=${sinceGreen} • greens=${sessGreens}/${ses
 $("gsah2").textContent = "";
 
     $("state").textContent = scored.state;
+
+    if (scored.state !== lastStateLabel) {
+      lastStateLabel = scored.state;
+      stateStartSpinCount = spins.length;
+    }
+    const stateDuration = Math.max(0, spins.length - stateStartSpinCount);
+    let stateSeverity = "Mild";
+    if (repHeavy || repSt.length >= 3 || repNums.length >= 2) stateSeverity = "Strong";
+    else if (dozSig.gap >= 3 || colSig.gap >= 3) stateSeverity = "Moderate";
+
+    const qHits = { GN: cts.gn, HO: cts.ho, LO: cts.lo, M: cts.m };
+    const qVals = Object.values(qHits);
+    const qGap = Math.max(...qVals) - Math.min(...qVals);
+    const qHot = Object.entries(qHits).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0]))[0];
+    const qDry = Object.entries(qHits).sort((a,b)=>a[1]-b[1] || a[0].localeCompare(b[0]))[0];
+    const qMode = qGap >= 5 ? "EXTREME" : (qGap >= 3 ? `DRY ${qDry[0]}` : "BALANCED");
+
+    $("liveState").textContent = scored.state;
+    $("liveStateMeta").textContent = `Dur ${stateDuration} spins • ${stateSeverity}`;
+    $("live102").textContent = `GN ${cts.gn} | HO ${cts.ho} | LO ${cts.lo} | M ${cts.m}`;
+    $("live102Meta").textContent = `Gap ${qGap} • ${qMode} • Hot ${qHot[0]}`;
+    $("liveRepeat").textContent = `Nums ${repNums.length} • Streets ${repSt.length} • ${repHeavy ? 'Repeat-Heavy' : 'Calm'}`;
+    $("liveImbalance").textContent = `Dozen gap ${dozSig.gap} • Column gap ${colSig.gap} • Driest corner ${(($("corners5")&&$("corners5").textContent)||'—').replace(/^D5C — /,'')}`;
 
   // Trend → strategy guardrails (user-defined)
   // IF Repeat-Heavy → 12 Soldiers (alt: Iron Turtle v2)
