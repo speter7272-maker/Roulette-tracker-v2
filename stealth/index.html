@@ -112,8 +112,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64.6 (keypad restored)</div>
-    <div class="build">R2 TRACKER — IRONING • v1.64.6 (keypad restored)</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64.8 (keypad restored final)</div>
+    <div class="build">R2 TRACKER — IRONING • v1.64.8 (keypad restored final)</div>
     <div class="sub">Build date: <b>2026-01-10</b>. Mobile layout tuned for strategy reads: entry signals, dozens/columns imbalance, 10-2-Win readiness, Greenland/green status, and Junko quadrant counts. Saves on-device.</div>
 
     <div class="card">
@@ -530,8 +530,6 @@ const JUNKO_BET_NUMS = (() => {
   let tableMode = "CAN_SIT_OUT";
   let stateTracker = { current:"—", sinceSpinCount:0 };
   let perf = { actions: [], stats: {}, activePlay: null };
-  let stateTracker.current = null;
-  let stateTracker.sinceSpinCount = 0;
 
   const trendDismissBtn = $("trendDismissBtn");
   const trendAlert = $("trendAlert");
@@ -3271,13 +3269,6 @@ function render() {
     $("columnSignal2").textContent = `${colSig.state} imbalance • gap ${colSig.gap} • Double Cross ${colSig.gap >= 3 && dozSig.gap >= 3 ? 'READY' : 'WAIT'}`;
 
     const scored = scoreStrategies(recent);
-    if (stateTracker.current !== scored.state){
-      stateTracker.current = scored.state;
-      stateTracker.sinceSpinCount = spins.length;
-      save();
-    }
-    const stateDuration = Math.max(0, spins.length - (Number(stateTracker.sinceSpinCount)||0));
-    let stateSeverity = "Mild";
     const sinceGreen = Number.isFinite(gdc) ? gdc : 0;
     const repNums = findRepeatNumbers(recent, 5);
     const repSt = findRepeatStreets(recent, 5);
