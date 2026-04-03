@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Roulette Trend Tracker • R2 • IRONING • v1.64.9</title>
+  <title>Roulette Trend Tracker • R2 • IRONING • v1.64.10</title>
   <style>
     :root{color-scheme:dark; --bg:#0b1220; --card:#0f1a2e; --muted:#94a3b8; --txt:#e5e7eb; --accent:#60a5fa; --warn:#fbbf24; --danger:#ef4444; --ok:#34d399; --chip:#111c33; --border:#1f2a44;}
     *{box-sizing:border-box}
@@ -112,8 +112,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64.9 (repeat-heavy strategy engine)</div>
-    <div class="build">R2 TRACKER — IRONING • v1.64.9 (repeat-heavy strategy engine)</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.64.10 (clean stable repeat-heavy)</div>
+    <div class="build">R2 TRACKER — IRONING • v1.64.10 (clean stable repeat-heavy)</div>
     <div class="sub">Build date: <b>2026-01-10</b>. Mobile layout tuned for strategy reads: entry signals, dozens/columns imbalance, 10-2-Win readiness, Greenland/green status, and Junko quadrant counts. Saves on-device.</div>
 
     <div class="card">
@@ -717,6 +717,21 @@ const JUNKO_BET_NUMS = (() => {
     return {best, ready: best.age >= 7};
   }
 
+  function classifyRepeatHeavyStage(repNums, repSt, cts){
+    const safeNums = Array.isArray(repNums) ? repNums.length : 0;
+    const safeSt = Array.isArray(repSt) ? repSt.length : 0;
+    const d1 = Number((cts && cts.d1) || 0);
+    const d2 = Number((cts && cts.d2) || 0);
+    const d3 = Number((cts && cts.d3) || 0);
+    const dozenMax = Math.max(d1, d2, d3);
+
+    if (safeSt >= 3 && dozenMax >= 7) return "DOMINANT";
+    if (safeSt >= 2 && dozenMax >= 6) return "EXPANDING";
+    if (safeSt >= 2 && safeNums >= 1 && dozenMax >= 5) return "EARLY";
+    return "NONE";
+  }
+
+
 
   const STRATEGY_DETAILS = {
     "6 Diamonds + 0/00 (Primary)":
@@ -950,72 +965,11 @@ Rule
 Exit
 - If street repeats begin (repeat streets flag turns on), stop and switch strategies.`,
 
-        "Sit out":
+    "Sit out":
 `Sit out
 - Keep logging spins until a repeat or concentration appears.`
-
+  
     ,
-    "10-2-Win (Reactivation)":
-`10-2-Win (Reactivation)
-
-Use when
-- Table is repeat-heavy
-- A 10-2 sector was dry, then reactivated
-- Early cluster stage
-
-Play
-- Bet the same reactivated sector
-- Short burst only
-
-Progression
-- 1,1,2,2,3,3
-
-Exit
-- +10 to +15
-- Or stop after 2 clear misses`,
-    "Plus 9 HOT":
-`Plus 9 HOT
-
-Use when
-- Repeat-heavy
-- Cluster is expanding across adjacent streets
-
-Play
-- Start with last hit street ±1
-- Expand contiguously on misses
-
-Progression
-- 3 streets @1
-- 6 streets @2
-- 9 streets @4
-
-Exit
-- Hit and reset
-- Stop after level 3`,
-    "333 Momentum":
-`333 Momentum
-
-Use when
-- Repeat-heavy
-- One dozen is dominant
-- Repeats and clustering are strong
-
-Structure
-- 1 dozen = 3 streets
-- 1 dozen = 3 splits
-- 1 dozen = 3 corners
-
-Rules
-- Each dozen is its own group
-- Hit in a dozen → remove that dozen
-
-Progression
-- 1,1,2,2,3,3...
-
-Exit
-- +15 to +25
-- Reset after 2 wins`
-
     "Corners + Double Streets (Follow the Leader — Locked Until Loss)":
 `Corners + Double Streets (Follow the Leader — Locked Until Loss)
 
@@ -2605,40 +2559,15 @@ function scoreStrategies(vals) {
     }
   } else if(state === "Repeat-Heavy"){
     if(clusterStage === "EARLY"){
-      primary = {
-        mode: "CASH",
-        name: "10-2-Win (Reactivation)",
-        score: 92,
-        why: "Repeat-heavy early cluster after dry reactivation."
-      };
+      primary = {name:"10-2-Win (Reactivation)", score:92, why:"Repeat-heavy early cluster after dry reactivation.", mode:"CASH"};
     } else if(clusterStage === "EXPANDING"){
-      primary = {
-        mode: "CASH",
-        name: "Plus 9 HOT",
-        score: 94,
-        why: "Repeat-heavy cluster expanding across adjacent streets."
-      };
+      primary = {name:"Plus 9 HOT", score:94, why:"Repeat-heavy cluster expanding across adjacent streets.", mode:"CASH"};
     } else if(clusterStage === "DOMINANT"){
-      primary = {
-        mode: "CASH",
-        name: "333 Momentum",
-        score: 90,
-        why: "Repeat-heavy with dominant dozen and repeated streets."
-      };
+      primary = {name:"333 Momentum", score:90, why:"Repeat-heavy with dominant dozen and repeated streets.", mode:"CASH"};
     } else if((tableMode || "CAN_SIT_OUT") === "MUST_BET"){
-      primary = {
-        mode: "COMP",
-        name: "Sit out / Flat bet",
-        score: 60,
-        why: "Weak repeat-heavy signal; keep exposure minimal."
-      };
+      primary = {name:"6 Diamonds + 0/00 (Primary)", score:70, why:"Weak repeat-heavy signal; controlled fallback in live table mode.", mode:"COMP"};
     } else {
-      primary = {
-        mode: "COMP",
-        name: "Sit out / Flat bet",
-        score: 60,
-        why: "Weak repeat-heavy signal."
-      };
+      primary = {name:"Sit out / Flat bet", score:60, why:"Weak repeat-heavy signal.", mode:"COMP"};
     }
   } else if(state === "Even"){
     // Dozens Overload v2 not present; default to Easy Street.
@@ -3368,25 +3297,7 @@ function render() {
     const repSt = findRepeatStreets(recent, 5);
 
     const repHeavy = repSt.length >= 3 || repNums.length >= 2 || scored.state === 'Repeat-Heavy';
-
-    // Repeat-heavy cluster stage
-    let clusterStage = "NONE";
-    if (repHeavy) {
-      const repeatStreetCount = repSt.length;
-      const repeatNumCount = repNums.length;
-      const dozenMax = Math.max(cts.d1, cts.d2, cts.d3);
-
-      if (repeatStreetCount >= 2 && repeatNumCount >= 1 && dozenMax >= 5) {
-        clusterStage = "EARLY";
-      }
-      if (repeatStreetCount >= 2 && dozenMax >= 6) {
-        clusterStage = "EXPANDING";
-      }
-      if (repeatStreetCount >= 3 && dozenMax >= 7) {
-        clusterStage = "DOMINANT";
-      }
-    }
-
+    const clusterStage = repHeavy ? classifyRepeatHeavyStage(repNums, repSt, cts) : "NONE";
     const ten2 = ready102Win(jAges);
     const gateBits = [
       `10-2-Win ${ten2.ready ? 'READY ' + ten2.best.id + ' (' + (ten2.best.age===999 ? sessTotal+'+' : ten2.best.age) + ')' : 'WAIT'}`,
@@ -3438,11 +3349,12 @@ if (stateTracker.current !== scored.state) {
     if (repHeavy || repSt.length >= 3 || repNums.length >= 2) stateSeverity = "Strong";
     else if (dozSig.gap >= 3 || colSig.gap >= 3) stateSeverity = "Moderate";
 
-    const qHits = { GN: cts.gn, HO: cts.ho, LO: cts.lo, M: cts.m };
-    const qVals = Object.values(qHits);
-    const qGap = Math.max(...qVals) - Math.min(...qVals);
-    const qHot = Object.entries(qHits).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0]))[0];
-    const qDry = Object.entries(qHits).sort((a,b)=>a[1]-b[1] || a[0].localeCompare(b[0]))[0];
+    const qHits = { GN: Number(cts.gn||0), HO: Number(cts.ho||0), LO: Number(cts.lo||0), M: Number(cts.m||0) };
+    const qVals = Object.values(qHits).filter(v => Number.isFinite(v));
+    let qGap = 0;
+    if (qVals.length) qGap = Math.max(...qVals) - Math.min(...qVals);
+    const qHot = Object.entries(qHits).sort((a,b)=>(Number(b[1]||0)-Number(a[1]||0)) || a[0].localeCompare(b[0]))[0] || ["—",0];
+    const qDry = Object.entries(qHits).sort((a,b)=>(Number(a[1]||0)-Number(b[1]||0)) || a[0].localeCompare(b[0]))[0] || ["—",0];
     const qMode = qGap >= 5 ? "EXTREME" : (qGap >= 3 ? `DRY ${qDry[0]}` : "BALANCED");
 
     if ($("state2")) $("state2").textContent = `Window: last ${windowN} • Session: ${sessionId} • Dur ${stateDuration}`;
@@ -3810,6 +3722,7 @@ if (db.ok) {
   render();
   setTimeout(() => { try { ensureKeypad(); } catch(_) {} }, 50);
   setTimeout(() => { try { ensureKeypad(); } catch(_) {} }, 300);
+  setTimeout(() => { try { ensureKeypad(); } catch(_) {} }, 800);
 });
 
 /* === WHEEL WAVE TRACKER (SAFE ADD-ON) ===
