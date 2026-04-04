@@ -112,8 +112,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.65.4 (render hardening)</div>
-    <div class="build">R2 TRACKER — IRONING • v1.65.4 (render hardening)</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.65.5 (corner live sync)</div>
+    <div class="build">R2 TRACKER — IRONING • v1.65.5 (corner live sync)</div>
     <div class="sub">Build date: <b>2026-01-10</b>. No-session mode. Clear between sessions and rename the Casino field manually. Mobile layout tuned for strategy reads: entry signals, dozens/columns imbalance, 10-2-Win readiness, Greenland/green status, and Junko quadrant counts. Saves on-device.</div>
 
     <div class="card">
@@ -3461,9 +3461,28 @@ if (db.ok) {
         $("corners5").textContent = "—";
         $("corners5b").textContent = "—";
       } else {
-        const snap = computeRunningDriest5(sesSpins);
-        $("corners5").textContent = `${snap.setFlag} — ${snap.line || "—"}`;
-        $("corners5b").textContent = "LIVE — (x) is spins since last hit.";
+        // Hard-sync to the newest stored spin so a just-hit corner cannot linger one spin late.
+        const newestSpin = sesSpins[0];
+        const allCorners = computeCornersStatsFromSpins(sesSpins);
+        const newestCornerIds = (NUM_TO_CORNERS.get(newestSpin) || []);
+        const synced = allCorners.map(c => {
+          if (newestCornerIds.includes(c.id)) {
+            return { ...c, age: 0 };
+          }
+          return c;
+        });
+
+        const sorted = [...synced].sort((a,b)=>{
+          if (a.age !== b.age) return b.age - a.age;
+          if (a.hits !== b.hits) return a.hits - b.hits;
+          return a.id.localeCompare(b.id);
+        }).slice(0,5);
+
+        const line = sorted.map(c => `${c.id} (${c.age})`).join(" / ");
+        $("corners5").textContent = `D5C — ${line || "—"}`;
+        $("corners5b").textContent = newestCornerIds.length
+          ? `LIVE — newest spin ${newestSpin} hit ${newestCornerIds.join(", ")}`
+          : "LIVE — (x) is spins since last hit.";
       }
     } catch(e) {
       $("corners5").textContent = "—";
