@@ -115,8 +115,8 @@
 <body>
   <div class="wrap">
     <h1>Roulette Trend Tracker</h1>
-    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.65.15 (merged state view)</div>
-    <div class="build">R2 TRACKER — IRONING • v1.65.15 (merged state view)</div>
+    <div id="buildStamp" class="pill" style="display:inline-block;margin-top:6px">Build: R2 • IRONING • v1.65.16 (play recommendation system)</div>
+    <div class="build">R2 TRACKER — IRONING • v1.65.16 (play recommendation system)</div>
     <div class="sub">Build date: <b>2026-01-10</b>. No-session mode. Clear between sessions and rename the Casino field manually. Mobile layout tuned for strategy reads: entry signals, dozens/columns imbalance, 10-2-Win readiness, Greenland/green status, and Junko quadrant counts. Saves on-device.</div>
 
     <div class="card">
@@ -3468,6 +3468,160 @@ function buildLastSpinEffect(curr, prev){
 }
 
 
+
+let currentPlayRec = null;
+
+function buildPlayRecommendation(spins, recent, cts, trendState, repNums, repSt, dozSig, colSig){
+  const gap = Math.max(cts.d1, cts.d2, cts.d3) - Math.min(cts.d1, cts.d2, cts.d3);
+  const repeatHeavy = repSt.length >= 3 || repNums.length >= 2;
+  const colEdge = Math.abs((cts.c1||0) - (cts.c3||0));
+  const structure = colEdge >= 3 || repNums.length >= 2 || repSt.length >= 2;
+
+  let cassLayout = "STANDARD";
+  if (colEdge >= 3) cassLayout = (cts.c1 > cts.c3) ? "C2+C3" : "C1+C2";
+  if (repeatHeavy) cassLayout = "REVERSE";
+
+  const driestDozen = (function(){
+    const entries = [["D1", cts.d1 || 0],["D2", cts.d2 || 0],["D3", cts.d3 || 0]]
+      .sort((a,b)=>(a[1]-b[1]) || a[0].localeCompare(b[0]));
+    return entries[0][0];
+  })();
+
+  const hotCol = (function(){
+    const entries = [["C1", cts.c1 || 0],["C2", cts.c2 || 0],["C3", cts.c3 || 0]]
+      .sort((a,b)=>(b[1]-a[1]) || a[0].localeCompare(b[0]));
+    return entries[0][0];
+  })();
+
+  if (repeatHeavy){
+    if (repSt.length >= 3){
+      return {
+        name: "333 Momentum",
+        brief: `Repeat-heavy • streets ${repSt.length} • nums ${repNums.length}`,
+        bet: "Use your 333 repeat-heavy layout: 3 streets in one dozen, 3 splits in one dozen, 3 corners in one dozen based on recent repeat pressure.",
+        numbers: "Build from current repeat-heavy streets first, then related splits and corners in the hottest zones.",
+        units: "Base 1 unit per active bet group unless you are intentionally scaling.",
+        progression: "Use your saved 333 progression / removal rules.",
+        rules: "Momentum override. Use only while repeat-heavy remains active. Reassess after a win cycle or if repeat pressure cools.",
+        why: `Repeat-heavy override • streets ${repSt.length} • numbers ${repNums.length}`
+      };
+    }
+    return {
+      name: "Plus 9",
+      brief: `Repeat-heavy • streets ${repSt.length} • nums ${repNums.length}`,
+      bet: "Bet your Plus 9 momentum set on the currently repeating streets / hot zones.",
+      numbers: "Use the currently repeating streets and local cluster numbers from the board.",
+      units: "Flat or small controlled press only.",
+      progression: "Flat / controlled momentum press.",
+      rules: "Exit after 1–2 hits or when repeat-heavy cools.",
+      why: `Repeat-heavy override • streets ${repSt.length} • numbers ${repNums.length}`
+    };
+  }
+
+  if (gap >= 8){
+    const dozenMap = { D1: "1–12", D2: "13–24", D3: "25–36" };
+    const side = driestDozen === "D1" ? "LOW" : driestDozen === "D2" ? "MIDDLE" : "HIGH";
+    return {
+      name: `Tupelo ${side}`,
+      brief: `Extreme imbalance • gap ${gap} • dry ${driestDozen}`,
+      bet: `Bet ${driestDozen} (${dozenMap[driestDozen]})`,
+      numbers: dozenMap[driestDozen],
+      units: "1 unit",
+      progression: "1 → 2 → 3 → 5 → 8",
+      rules: "Exit after first win. Do not grind through a dead reversion window.",
+      why: `Gap ${gap} • driest ${driestDozen}`
+    };
+  }
+
+  if (gap >= 6){
+    return {
+      name: "Boss",
+      brief: `Moderate / strong imbalance • gap ${gap} • dry ${driestDozen}`,
+      bet: `Use your Boss structure on the dry side anchored to ${driestDozen}.`,
+      numbers: `Dry target: ${driestDozen}. Use your saved Boss layout and support bets.`,
+      units: "Base 1 unit structure",
+      progression: "Use your saved Boss progression.",
+      rules: "Exit after first clean win cycle or target profit. Reassess if state changes.",
+      why: `Gap ${gap} • dry ${driestDozen}`
+    };
+  }
+
+  if (gap >= 3 && structure){
+    const layouts = {
+      "STANDARD": "1/5, 8/12, 13/17, 20/24, 25/29, 32/36",
+      "C2+C3": "2/6, 8/12, 14/18, 20/24, 26/30, 32/36",
+      "C1+C2": "1/5, 7/11, 13/17, 19/23, 25/29, 31/35",
+      "REVERSE": "2/6, 7/11, 14/18, 19/23, 26/30, 31/35"
+    };
+    return {
+      name: `Cassandra (${cassLayout})`,
+      brief: `Structured mixed • gap ${gap} • C1/C3 edge ${colEdge}`,
+      bet: `Play Cassandra’s Corners using ${cassLayout} layout.`,
+      numbers: layouts[cassLayout],
+      units: "1 unit each corner",
+      progression: "1, 1, 2, 3, 5, 8",
+      rules: "After 1st win remove winning corner and continue. After 2nd win reset to 6 corners. If repeat-heavy appears, switch to REVERSE logic.",
+      why: `Gap ${gap} • structure yes • hot ${hotCol}`
+    };
+  }
+
+  return {
+    name: "Twin Spines",
+    brief: `Balanced / low-structure • gap ${gap}`,
+    bet: "Use your Twin Spines default balanced coverage.",
+    numbers: "Use your saved Twin Spines layout / dozens pairing.",
+    units: "1 unit each side",
+    progression: "Flat",
+    rules: "Default balanced-table play. Exit after 1–2 wins or when state changes.",
+    why: `Gap ${gap} • structure ${structure ? "yes" : "no"}`
+  };
+}
+
+function wirePlayExplainButton(){
+  const btn = $("playExplainBtn");
+  if (!btn || btn.__wired) return;
+  btn.__wired = true;
+  btn.addEventListener("click", openPlayRecommendationModal);
+}
+
+function openPlayRecommendationModal(){
+  const rec = currentPlayRec;
+  if (!rec) return;
+  const old = document.getElementById("playRecModal");
+  if (old) old.remove();
+
+  const overlay = document.createElement("div");
+  overlay.className = "modalOverlay";
+  overlay.id = "playRecModal";
+  overlay.innerHTML = `
+    <div class="modalCard">
+      <div class="modalHead">
+        <div class="modalTitle">Play recommendation</div>
+        <button class="btn" type="button" id="playRecCloseBtn">Close</button>
+      </div>
+      <div class="mono">
+        <div class="playLine"><b>Strategy:</b> ${rec.name}</div>
+        <div class="playLine"><b>State:</b> ${rec.brief}</div>
+        <div class="playLine"><b>Bet:</b> ${rec.bet}</div>
+        <div class="playLine"><b>Numbers / layout:</b> ${rec.numbers}</div>
+        <div class="playLine"><b>Units:</b> ${rec.units}</div>
+        <div class="playLine"><b>Progression:</b> ${rec.progression}</div>
+        <div class="playLine"><b>Rules:</b> ${rec.rules}</div>
+        <div class="playLine"><b>Why now:</b> ${rec.why}</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const close = () => {
+    const m = document.getElementById("playRecModal");
+    if (m) m.remove();
+  };
+  const closeBtn = document.getElementById("playRecCloseBtn");
+  if (closeBtn) closeBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+}
+
 function render() {
   try {
     $("winLabel").textContent = "Last " + windowN;
@@ -3606,6 +3760,10 @@ if (stateTracker.current !== scored.state) {
     if ($("liveImbalance")) $("liveImbalance").textContent = `Dozen gap ${dozSig.gap} • Column gap ${colSig.gap} • Driest corner ${(($("corners5")&&$("corners5").textContent)||'—').replace(/^D5C — /,'')}`;
     const spinEffect = buildLastSpinEffect(currSummary, prevSummary);
     if ($("liveStateDelta")) $("liveStateDelta").textContent = `${spinEffect.title} • ${spinEffect.meta}`;
+    currentPlayRec = buildPlayRecommendation(sessNums, recent, cts, currSummary.state, repNums, repSt, dozSig, colSig);
+    if ($("trendPlay")) $("trendPlay").textContent = currentPlayRec.name;
+    if ($("trendPlayMeta")) $("trendPlayMeta").textContent = `${currentPlayRec.brief} • ${currentPlayRec.why}`;
+    wirePlayExplainButton();
 
 
   // Trend → strategy guardrails (user-defined)
